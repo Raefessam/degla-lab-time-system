@@ -134,19 +134,10 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <div class="panel" id="panel-employees">
   <div class="card">
     <div class="stitle">إضافة موظف جديد</div>
+    <div class="shint">كود الموظف يُولَّد تلقائيًا (E001، E002...) — بند 13.1. الفرع/الشيفت يختارهما الموظف بنفسه عند كل حضور.</div>
     <div class="row2">
       <div class="fg"><label>الاسم</label><input type="text" id="newName"></div>
       <div class="fg"><label>المرتب اليومي</label><input type="number" id="newSalary"></div>
-    </div>
-    <div class="row2">
-      <div class="fg">
-        <label>الفرع</label>
-        <select id="newBranch"><option>زهراء المعادي</option><option>كوتسيكا</option><option>كورنيش طرة</option></select>
-      </div>
-      <div class="fg">
-        <label>الشيفت الافتراضي</label>
-        <select id="newShift"><option>شيفت 1</option><option>شيفت 2</option></select>
-      </div>
     </div>
     <button class="btn bng bfull" onclick="submitAddEmployee()">إضافة الموظف ➕</button>
     <div class="msg" id="addEmpMsg"></div>
@@ -304,8 +295,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const data = {
       name: document.getElementById('newName').value,
       dailySalary: Number(document.getElementById('newSalary').value),
-      branch: document.getElementById('newBranch').value,
-      defaultShift: document.getElementById('newShift').value,
     };
     if (!data.name || !data.dailySalary) return showMsg('addEmpMsg', false, 'من فضلك اكمل كل الحقول');
 
