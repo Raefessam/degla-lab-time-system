@@ -171,6 +171,20 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <!-- بند 12: الغياب -->
 <div class="panel" id="panel-absence">
   <div class="card">
+    <div class="stitle">تسجيل حالة غياب (بند 12)</div>
+    <div class="shint">استخدم هذه الشاشة عند تواصل الموظف معك (واتساب/مكالمة) بخصوص غيابه، أو عند تسجيل غياب بدون أي تواصل خالص.</div>
+    <div class="row2">
+      <div class="fg"><label>كود الموظف</label><input type="text" id="newAbsEmpId"></div>
+      <div class="fg"><label>التاريخ (YYYY-MM-DD)</label><input type="text" id="newAbsDate"></div>
+    </div>
+    <div class="row2">
+      <button class="btn bng" onclick="submitRequestAbsence()">📨 تسجيل طلب إجازة طارئة (بتواصل)</button>
+      <button class="btn br" onclick="submitUnauthorizedAbsence()">🚫 غياب بدون إذن مباشرة (بدون تواصل)</button>
+    </div>
+    <div class="msg" id="newAbsMsg"></div>
+  </div>
+
+  <div class="card">
     <div class="stitle">الموافقة على غياب / إجازة طارئة (بند 12)</div>
     <div class="shint">ملحوظة: البلاغ المتأخر (بعد يوم الغياب نفسه) يُصنَّف "غياب بدون إذن" تلقائيًا ولا يظهر هنا للموافقة.</div>
     <div class="row2">
@@ -186,6 +200,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 </div>
 
 <!-- بند 12: التقرير الشهري -->
+
 <div class="panel" id="panel-reports">
   <div class="card">
     <div class="stitle">حساب مرتب موظف لشهر معين (منهج الجمع — بند 12)</div>
@@ -330,6 +345,26 @@ input:checked + .slider:before { transform:translateX(-20px); }
     apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value.trim(), start, end })
       .then(() => showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'))
       .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  function submitRequestAbsence() {
+    const empId = document.getElementById('newAbsEmpId').value.trim();
+    const date = document.getElementById('newAbsDate').value.trim();
+    if (!empId || !date) return showMsg('newAbsMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
+
+    apiCall('requestAbsence', { employeeId: empId, date })
+      .then(res => showMsg('newAbsMsg', true, 'تم تسجيل طلب الإجازة — حالته: قيد الانتظار. استخدم البطاقة اللي تحت للموافقة أو الرفض.'))
+      .catch(err => showMsg('newAbsMsg', false, err.message));
+  }
+
+  function submitUnauthorizedAbsence() {
+    const empId = document.getElementById('newAbsEmpId').value.trim();
+    const date = document.getElementById('newAbsDate').value.trim();
+    if (!empId || !date) return showMsg('newAbsMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
+
+    apiCall('markUnauthorizedAbsence', { employeeId: empId, date })
+      .then(res => showMsg('newAbsMsg', true, 'تم تسجيل غياب بدون إذن مباشرة.'))
+      .catch(err => showMsg('newAbsMsg', false, err.message));
   }
 
   function submitAbsenceDecision(approve) {
