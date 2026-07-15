@@ -186,7 +186,13 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     document.getElementById('empAvatar').textContent = status.name ? status.name.charAt(0) : '؟';
 
     let indicatorHtml = '';
-    if (status.debtSuspended) {
+    if (status.debtSuspended && status.currentDebtHours > 0) {
+      // بند 5: الحالة المركّبة — معفى من دين جديد، لكن لسه عليه دين قديم قابل للتحصيل
+      indicatorHtml =
+        '<div class="timing-late">🔓⚠️ معفى من دين جديد — بس لسه عندك دين قديم' +
+        '<div class="timing-balance">' + status.currentDebtHours.toFixed(2) + ' ساعة</div>' +
+        '<div class="timing-sub">التعليق بيمنع دين جديد بس، مش بيلغي القديم — اشتغل أوفر تايم عشان تعوضه قبل آخر الشهر</div></div>';
+    } else if (status.debtSuspended) {
       indicatorHtml =
         '<div class="timing-suspended">🔓 أنت معفى من نظام الخصومات' +
         '<div class="timing-sub">الأوفر تايم ما زال يُحتسب ويُدفع بشكل طبيعي</div></div>';
