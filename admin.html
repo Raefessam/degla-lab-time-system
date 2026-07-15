@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Degla Smart Lab - إدارة (نظام الوقت الجديد)</title>
+<meta name="theme-color" content="#4e9012"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════════
+   هوية التصميم مأخوذة بالكامل من dejla_admin_v9.html (R1)
+   المنطق الحسابي فقط جديد بالكامل — لا علاقة له بمنطق R1
+   ══════════════════════════════════════════════════════════ */
+:root {
+    --g: #6abf1e; --gd: #4e9012; --gl: #eef7e0; --gp: #f4fbec;
+    --r: #e53935; --rl: #fdecea;
+    --bg: #f0f2ee; --t: #2a3020; --m: #7a8572;
+    --b3: #e4e8e0; --b4: #c8cfc2;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
+body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
+
+.hdr { text-align:center; padding:16px 0 18px; }
+.hdr h1 { color:var(--gd); font-size:1.1rem; font-weight:900; }
+.hdr p { color:var(--m); font-size:.75rem; margin-top:2px; }
+
+/* بند 9: نفس أسلوب rep-toggle-bar بتاع R1 للتابات */
+.tab-bar { display:flex; gap:6px; margin-bottom:14px; background:var(--b3); border-radius:12px; padding:4px; overflow-x:auto; }
+.tab-btn {
+    flex:1; padding:9px 6px; border:none; border-radius:9px;
+    font-family:"Cairo",sans-serif; font-size:.72rem; font-weight:700;
+    cursor:pointer; background:transparent; color:var(--m); white-space:nowrap;
+    transition:all .2s;
+}
+.tab-btn.act { background:var(--gd); color:white; box-shadow:0 2px 8px rgba(45,110,14,.3); }
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+.card { background:white; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.04); margin-bottom:12px; padding:16px; border:1.5px solid var(--b3); }
+.stitle { font-weight:900; font-size:.92rem; color:var(--t); margin-bottom:12px; }
+.shint { font-size:.72rem; color:var(--m); margin-bottom:10px; line-height:1.6; }
+
+.fg { margin-bottom:12px; }
+.fg label { display:block; font-size:.7rem; font-weight:700; color:var(--m); margin-bottom:4px; text-transform:uppercase; }
+.fg input,.fg select { width:100%; padding:11px 13px; border:2px solid var(--b3); border-radius:11px; font-family:"Cairo",sans-serif; font-size:.9rem; color:var(--t); background:#fafafa; outline:none; transition:border-color .2s; -webkit-appearance:none; }
+.fg input:focus,.fg select:focus { border-color:var(--g); background:white; }
+.fg-hint { font-size:.68rem; color:var(--m); margin-top:-8px; margin-bottom:10px; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+.btn { padding:12px 18px; border:none; border-radius:13px; font-family:"Cairo",sans-serif; font-size:.85rem; font-weight:900; cursor:pointer; transition:all .2s; }
+.bng { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; box-shadow:0 4px 12px rgba(78,144,18,.28); }
+.br { background:linear-gradient(135deg,#e53935,#c62828); color:white; box-shadow:0 4px 12px rgba(197,40,40,.25); }
+.bfull { width:100%; }
+.btn:active { transform:scale(.98); }
+
+/* بند 8.1: مفتاح تبديل — نفس روح أزرار R1 المستديرة */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--b3); }
+.toggle-row:last-child { border-bottom:none; }
+.switch { position:relative; width:46px; height:26px; flex-shrink:0; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; inset:0; background:var(--b4); border-radius:26px; transition:.3s; }
+.slider:before { position:absolute; content:""; height:20px; width:20px; right:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
+input:checked + .slider { background:var(--gd); }
+input:checked + .slider:before { transform:translateX(-20px); }
+
+/* بند 10 و7.3: جدول المراجعة — نفس أسلوب monthly-table في R1 */
+.data-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.data-table th { background:var(--gl); color:var(--gd); font-weight:900; padding:9px 6px; text-align:right; }
+.data-table td { padding:9px 6px; border-bottom:1px solid var(--b3); text-align:right; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#f7faf3; }
+
+.badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:.66rem; font-weight:700; }
+.bg { background:var(--gl); color:var(--gd); }   /* بند 10: قيد الانتظار — حالة طبيعية */
+.br2 { background:var(--rl); color:var(--r); }    /* بند 7.3: يحتاج مراجعة — مشكلة فعلية */
+
+.mini-btn { padding:7px 12px; border:none; border-radius:9px; background:var(--gl); color:var(--gd); font-family:"Cairo",sans-serif; font-size:.72rem; font-weight:700; cursor:pointer; }
+
+/* رسائل النتائج — نفس أسلوب toast/result بتاع R1 */
+.msg { padding:11px 13px; border-radius:11px; font-size:.8rem; margin-top:10px; display:none; font-weight:700; }
+.msg.show { display:block; }
+.msg.ok { background:var(--gl); color:var(--gd); border:1.5px solid var(--g); }
+.msg.err { background:var(--rl); color:var(--r); border:1.5px solid var(--r); }
+
+/* بطاقة صافي المرتب — مطابقة rp-net في R1 */
+.rp-net { background:var(--gl); border-radius:12px; padding:14px; text-align:center; margin-top:10px; }
+.rp-net-lbl { font-size:.75rem; color:var(--gd); font-weight:700; }
+.rp-net-val { font-size:1.35rem; font-weight:900; color:var(--gd); margin-top:4px; }
+
+.empty { text-align:center; padding:26px; color:var(--b4); font-size:.82rem; }
+.footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:18px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🏢 دجله لاب — لوحة صاحب العمل</h1>
+  <p>النظام الحسابي الجديد (القائم على الوقت)</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn act" data-panel="review">🔎 مراجعة</button>
+  <button class="tab-btn" data-panel="employees">👥 الموظفين</button>
+  <button class="tab-btn" data-panel="absence">📅 الغياب</button>
+  <button class="tab-btn" data-panel="reports">📊 التقارير</button>
+  <button class="tab-btn" data-panel="month">🔒 قفل الشهر</button>
+</div>
+
+<!-- بند 10 و7.3: يحتاج مراجعة -->
+<div class="panel active" id="panel-review">
+  <div class="card">
+    <div class="stitle">الأيام المفتوحة / التي تحتاج مراجعة</div>
+    <div id="reviewList"><div class="empty">جاري التحميل...</div></div>
+    <button class="btn bng bfull" style="margin-top:10px;" onclick="loadReviewList()">تحديث القائمة 🔄</button>
+  </div>
+
+  <div class="card" id="manualCheckoutCard" style="display:none;">
+    <div class="stitle">تسجيل انصراف يدوي (بند 10)</div>
+    <div class="fg"><label>كود السجل</label><input type="text" id="mcRecordId" readonly></div>
+    <div class="fg"><label>وقت الانصراف (نظام 24 ساعة)</label><input type="text" id="mcTime" placeholder="22:15"></div>
+    <div class="fg"><label>اسم الأدمن</label><input type="text" id="mcAdmin" placeholder="اسمك"></div>
+    <div class="fg"><label>ملاحظة</label><input type="text" id="mcNote" placeholder="سبب التسجيل اليدوي"></div>
+    <button class="btn bng bfull" onclick="submitManualCheckout()">تأكيد التسجيل اليدوي</button>
+    <div class="msg" id="mcMsg"></div>
+  </div>
+</div>
+
+<!-- بند 8: إدارة الموظفين -->
+<div class="panel" id="panel-employees">
+  <div class="card">
+    <div class="stitle">إضافة موظف جديد</div>
+    <div class="row2">
+      <div class="fg"><label>الاسم</label><input type="text" id="newName"></div>
+      <div class="fg"><label>المرتب اليومي</label><input type="number" id="newSalary"></div>
+    </div>
+    <div class="row2">
+      <div class="fg">
+        <label>الفرع</label>
+        <select id="newBranch"><option>زهراء المعادي</option><option>كوتسيكا</option><option>كورنيش طرة</option></select>
+      </div>
+      <div class="fg">
+        <label>الشيفت الافتراضي</label>
+        <select id="newShift"><option>شيفت 1</option><option>شيفت 2</option></select>
+      </div>
+    </div>
+    <button class="btn bng bfull" onclick="submitAddEmployee()">إضافة الموظف ➕</button>
+    <div class="msg" id="addEmpMsg"></div>
+  </div>
+
+  <div class="card">
+    <div class="stitle">تعديل موظف (بند 8.1 و8.2)</div>
+    <div class="fg"><label>كود الموظف</label><input type="text" id="editEmpId" placeholder="كود الموظف"></div>
+    <button class="btn bng" onclick="loadEmployeeForEdit()">تحميل بيانات الموظف</button>
+
+    <div id="editEmpForm" style="display:none; margin-top:14px;">
+      <div class="toggle-row">
+        <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
+        <label class="switch">
+          <input type="checkbox" id="suspendToggle" onchange="submitSuspendToggle()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="fg" style="margin-top:12px;"><label>نافذة الحضور — من (بند 8.2)</label><input type="text" id="windowStart" placeholder="18:00"></div>
+      <div class="fg-hint">إلزامي بنظام 24 ساعة — اكتب "18:00" مش "6"</div>
+      <div class="fg"><label>نافذة الحضور — إلى</label><input type="text" id="windowEnd" placeholder="23:00"></div>
+      <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
+
+      <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
+      <div class="msg" id="editEmpMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- بند 12: الغياب -->
+<div class="panel" id="panel-absence">
+  <div class="card">
+    <div class="stitle">الموافقة على غياب / إجازة طارئة (بند 12)</div>
+    <div class="shint">ملحوظة: البلاغ المتأخر (بعد يوم الغياب نفسه) يُصنَّف "غياب بدون إذن" تلقائيًا ولا يظهر هنا للموافقة.</div>
+    <div class="row2">
+      <div class="fg"><label>كود الموظف</label><input type="text" id="absEmpId"></div>
+      <div class="fg"><label>التاريخ (YYYY-MM-DD)</label><input type="text" id="absDate"></div>
+    </div>
+    <div class="row2">
+      <button class="btn bng" onclick="submitAbsenceDecision(true)">✅ موافقة (إجازة معتمدة)</button>
+      <button class="btn br" onclick="submitAbsenceDecision(false)">❌ رفض (غياب بدون إذن)</button>
+    </div>
+    <div class="msg" id="absMsg"></div>
+  </div>
+</div>
+
+<!-- بند 12: التقرير الشهري -->
+<div class="panel" id="panel-reports">
+  <div class="card">
+    <div class="stitle">حساب مرتب موظف لشهر معين (منهج الجمع — بند 12)</div>
+    <div class="row2">
+      <div class="fg"><label>كود الموظف</label><input type="text" id="repEmpId"></div>
+      <div class="fg">
+        <label>الشهر</label>
+        <div class="row2">
+          <input type="number" id="repYear" placeholder="سنة">
+          <input type="number" id="repMonth" placeholder="شهر">
+        </div>
+      </div>
+    </div>
+    <button class="btn bng bfull" onclick="submitMonthlyReport()">حساب المرتب 📊</button>
+    <div id="reportResult" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- بند 6: قفل الشهر -->
+<div class="panel" id="panel-month">
+  <div class="card">
+    <div class="stitle">قفل الشهر (بند 6)</div>
+    <div class="shint">هذا الإجراء يحول أي دين وقت متبقٍ لكل الموظفين إلى خصم مالي فوري، دون أي مهلة إضافية، ولا يمكن التراجع عنه.</div>
+    <button class="btn br bfull" onclick="submitCloseMonth()">🔒 قفل الشهر الآن</button>
+    <div id="closeMonthResult" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<div class="footer">Infinite Systems — دجله لاب</div>
+
+<script>
+  // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
+
+  function apiCall(action, params) {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action', action);
+    Object.keys(params || {}).forEach(k => {
+      if (params[k] !== null && params[k] !== undefined) url.searchParams.set(k, params[k]);
+    });
+    return fetch(url).then(r => r.json()).then(data => {
+      if (data && data.error) throw new Error(data.error);
+      return data;
+    });
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('act'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('act');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+      if (tab.dataset.panel === 'review') loadReviewList();
+    });
+  });
+
+  function loadReviewList() {
+    document.getElementById('reviewList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    apiCall('reviewQueue')
+      .then(renderReviewList)
+      .catch(err => document.getElementById('reviewList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+  }
+
+  function renderReviewList(items) {
+    const box = document.getElementById('reviewList');
+    if (!items || items.length === 0) {
+      box.innerHTML = '<div class="empty">لا يوجد أي أيام تحتاج مراجعة حاليًا ✅</div>';
+      return;
+    }
+    let html = '<table class="data-table"><tr><th>الموظف</th><th>التاريخ</th><th>الشيفت</th><th>الفرع</th><th>الحالة</th><th></th></tr>';
+    items.forEach(r => {
+      const isNormalOpen = r.DayStatus === 'قيد الانتظار';
+      const badgeClass = isNormalOpen ? 'bg' : 'br2';
+      const icon = isNormalOpen ? '🕓' : '⚠️';
+      html += '<tr>' +
+        '<td>' + r.EmployeeID + '</td>' +
+        '<td>' + r.Date + '</td>' +
+        '<td>' + r.Shift + '</td>' +
+        '<td>' + r.Branch + '</td>' +
+        '<td><span class="badge ' + badgeClass + '">' + icon + ' ' + r.DayStatus + '</span></td>' +
+        '<td><button class="mini-btn" onclick="openManualCheckout(\'' + r.RecordID + '\')">تسجيل يدوي</button></td>' +
+        '</tr>';
+    });
+    html += '</table>';
+    box.innerHTML = html;
+  }
+
+  function openManualCheckout(recordId) {
+    document.getElementById('manualCheckoutCard').style.display = 'block';
+    document.getElementById('mcRecordId').value = recordId;
+    document.getElementById('manualCheckoutCard').scrollIntoView({behavior:'smooth'});
+  }
+
+  function submitManualCheckout() {
+    const recordId = document.getElementById('mcRecordId').value;
+    const time = document.getElementById('mcTime').value;
+    const admin = document.getElementById('mcAdmin').value;
+    const note = document.getElementById('mcNote').value;
+    if (!recordId || !time) return showMsg('mcMsg', false, 'من فضلك اكتب وقت الانصراف');
+
+    apiCall('manualCheckout', { recordId, time, admin, note })
+      .then(res => { showMsg('mcMsg', true, 'تم تسجيل الانصراف اليدوي بنجاح'); loadReviewList(); })
+      .catch(err => showMsg('mcMsg', false, err.message));
+  }
+
+  function submitAddEmployee() {
+    const data = {
+      name: document.getElementById('newName').value,
+      dailySalary: Number(document.getElementById('newSalary').value),
+      branch: document.getElementById('newBranch').value,
+      defaultShift: document.getElementById('newShift').value,
+    };
+    if (!data.name || !data.dailySalary) return showMsg('addEmpMsg', false, 'من فضلك اكمل كل الحقول');
+
+    apiCall('addEmployee', data)
+      .then(res => showMsg('addEmpMsg', true, 'تمت إضافة الموظف بكود: ' + res.employeeId))
+      .catch(err => showMsg('addEmpMsg', false, err.message));
+  }
+
+  function loadEmployeeForEdit() {
+    const id = document.getElementById('editEmpId').value.trim();
+    if (!id) return;
+    apiCall('employeeById', { employeeId: id })
+      .then(emp => {
+        if (!emp) return showMsg('editEmpMsg', false, 'الموظف غير موجود');
+        document.getElementById('editEmpForm').style.display = 'block';
+        document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
+        document.getElementById('windowStart').value = emp.CustomWindowStart || '';
+        document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+      })
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  function submitSuspendToggle() {
+    const checked = document.getElementById('suspendToggle').checked;
+    apiCall('setDeductionSuspension', { employeeId: document.getElementById('editEmpId').value.trim(), suspended: checked })
+      .then(() => showMsg('editEmpMsg', true, checked ? 'تم تفعيل الإعفاء من الخصومات' : 'تم إلغاء الإعفاء'))
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  function submitCustomWindow() {
+    const start = document.getElementById('windowStart').value;
+    const end = document.getElementById('windowEnd').value;
+    apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value.trim(), start, end })
+      .then(() => showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'))
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  function submitAbsenceDecision(approve) {
+    const empId = document.getElementById('absEmpId').value.trim();
+    const date = document.getElementById('absDate').value.trim();
+    if (!empId || !date) return showMsg('absMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
+
+    apiCall('decideAbsence', { employeeId: empId, date, approve, admin: 'الأدمن' })
+      .then(res => showMsg('absMsg', true, 'تم تسجيل القرار: ' + res.type))
+      .catch(err => showMsg('absMsg', false, err.message));
+  }
+
+  function submitMonthlyReport() {
+    const empId = document.getElementById('repEmpId').value.trim();
+    const year = Number(document.getElementById('repYear').value);
+    const month = Number(document.getElementById('repMonth').value);
+    if (!empId || !year || !month) return;
+
+    document.getElementById('reportResult').innerHTML = 'جاري الحساب...';
+    apiCall('calculateMonthlySalary', { employeeId: empId, year, month })
+      .then(res => {
+        document.getElementById('reportResult').innerHTML =
+          '<table class="data-table">' +
+          '<tr><th>البند</th><th>القيمة</th></tr>' +
+          '<tr><td>المرتب الأساسي</td><td>' + res.baseSalary + ' ج.م</td></tr>' +
+          '<tr><td>الأوفر تايم المدفوع</td><td>' + res.overtimePaid + ' ج.م</td></tr>' +
+          '</table>' +
+          '<div class="rp-net"><div class="rp-net-lbl">صافي المرتب</div><div class="rp-net-val">' + res.netSalary + ' ج.م</div></div>';
+      })
+      .catch(err => document.getElementById('reportResult').innerHTML = 'خطأ: ' + err.message);
+  }
+
+  function submitCloseMonth() {
+    if (!confirm('متأكد إنك عايز تقفل الشهر؟ الإجراء ده نهائي ومش هينفع تتراجع عنه.')) return;
+    document.getElementById('closeMonthResult').innerHTML = 'جاري التنفيذ...';
+    apiCall('closeMonth')
+      .then(res => {
+        let html = '<p style="font-size:.82rem; margin-bottom:8px;">تم القفل بتاريخ ' + res.closedAt + '</p>';
+        if (res.conversions.length === 0) {
+          html += '<div class="empty">مفيش أي ديون متبقية عند أي موظف 🎉</div>';
+        } else {
+          html += '<table class="data-table"><tr><th>الموظف</th><th>الدين المحوَّل</th><th>الخصم المالي</th></tr>';
+          res.conversions.forEach(c => {
+            html += '<tr><td>' + c.name + '</td><td>' + c.debtHours + ' ساعة</td><td>' + c.financialDeduction + ' ج.م</td></tr>';
+          });
+          html += '</table>';
+        }
+        document.getElementById('closeMonthResult').innerHTML = html;
+      })
+      .catch(err => document.getElementById('closeMonthResult').innerHTML = 'خطأ: ' + err.message);
+  }
+
+  function showMsg(elId, ok, text) {
+    const el = document.getElementById(elId);
+    el.className = 'msg show ' + (ok ? 'ok' : 'err');
+    el.textContent = text;
+  }
+
+  loadReviewList();
+</script>
+</body>
+</html>

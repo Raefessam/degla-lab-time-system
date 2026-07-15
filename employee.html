@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Degla Smart Lab - حضور (نظام الوقت الجديد)</title>
+<meta name="theme-color" content="#4e9012"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════════
+   هوية التصميم مأخوذة بالكامل من dejla_attendance_v4.html (R1)
+   المنطق الحسابي فقط جديد بالكامل — لا علاقة له بمنطق R1
+   ══════════════════════════════════════════════════════════ */
+:root {
+    --g: #6abf1e; --gd: #4e9012; --gl: #eef7e0; --gp: #f4fbec;
+    --r: #e53935; --rl: #fdecea;
+    --y: #B9770E; --yl: #fff8e8; /* لون جديد للدين "المعلّق" — غير موجود في R1، بند 5 */
+    --bg: #f0f2ee; --t: #2a3020; --m: #7a8572;
+    --b3: #e4e8e0; --b4: #c8cfc2;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
+body { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height:100vh; min-height:100dvh; padding:0 0 32px; background:var(--gp); }
+
+.hdr {
+    width:100%; background:white; padding:16px 16px 14px;
+    display:flex; flex-direction:column; align-items:center;
+    border-bottom:2px solid var(--gl);
+    box-shadow:0 2px 12px rgba(78,144,18,.1);
+}
+.hdr h1 { color:var(--gd); font-size:1rem; font-weight:900; margin:0; }
+.hdr p  { color:var(--m); font-size:.72rem; margin:2px 0 0; }
+
+.step { width:100%; max-width:420px; padding:14px; }
+.card { background:white; border-radius:20px; padding:18px; margin-bottom:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1.5px solid var(--b3); }
+.stitle { font-weight:900; font-size:.95rem; color:var(--t); margin-bottom:14px; }
+.fg { margin-bottom:12px; }
+.fg label { display:block; font-size:.7rem; font-weight:700; color:var(--m); margin-bottom:4px; text-transform:uppercase; letter-spacing:.3px; }
+.fg input,.fg select { width:100%; padding:12px 14px; border:2px solid var(--b3); border-radius:12px; font-family:"Cairo",sans-serif; font-size:.95rem; color:var(--t); background:#fafafa; outline:none; transition:border-color .2s; -webkit-appearance:none; }
+.fg input:focus,.fg select:focus { border-color:var(--g); background:white; }
+.btn { width:100%; padding:14px; border:none; border-radius:14px; font-family:"Cairo",sans-serif; font-size:.95rem; font-weight:900; cursor:pointer; transition:all .2s; }
+.bng { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; box-shadow:0 4px 12px rgba(78,144,18,.3); }
+.btn:active { transform:scale(.98); }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+
+.emp-card { background:linear-gradient(135deg,var(--gp),var(--gl)); border:2px solid var(--g); border-radius:18px; padding:16px; margin-bottom:14px; text-align:center; }
+.emp-avatar { width:56px; height:56px; border-radius:50%; background:var(--g); color:white; font-size:1.4rem; font-weight:900; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+.emp-name { font-size:1rem; font-weight:900; color:var(--t); }
+
+/* بند 5: حالات المؤشر — timing-ok (آمن) / timing-pending (معلّق، جديد) / timing-late (مؤكّد) */
+.timing-ok { background:#e3f2fd; color:#1565c0; border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
+.timing-pending { background:var(--yl); color:var(--y); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; border:1.5px dashed var(--y); }
+.timing-late { background:var(--rl); color:var(--r); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
+.timing-suspended { background:#f5f5f5; color:var(--m); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
+.timing-balance { font-size:1.5rem; font-weight:900; margin:4px 0; }
+.timing-sub { font-size:.72rem; font-weight:600; opacity:.85; margin-top:4px; }
+
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; margin-top:6px; }
+.bg-pending { background:#fff3cd; color:#856404; }
+
+.att-btns { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:10px; }
+.att-in { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; border:none; border-radius:14px; padding:18px; font-family:"Cairo",sans-serif; font-size:.95rem; font-weight:900; cursor:pointer; transition:all .2s; }
+.att-out { background:linear-gradient(135deg,#e53935,#c62828); color:white; border:none; border-radius:14px; padding:18px; font-family:"Cairo",sans-serif; font-size:.95rem; font-weight:900; cursor:pointer; transition:all .2s; }
+.att-in:active,.att-out:active { transform:scale(.97); }
+.att-in:disabled,.att-out:disabled { opacity:.6; }
+
+.working-badge { display:flex; align-items:center; justify-content:center; gap:6px; background:#fff3cd; color:#856404; padding:8px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-bottom:12px; }
+.wdot { width:8px; height:8px; border-radius:50%; background:#e6a817; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.result-box { margin-top:14px; padding:14px; border-radius:12px; font-size:.82rem; line-height:1.9; display:none; }
+.result-box.show { display:block; }
+.result-box.ok { background:var(--gl); border:1.5px solid var(--g); color:var(--t); }
+.result-box.err { background:var(--rl); border:1.5px solid var(--r); color:var(--r); }
+.result-box .row { display:flex; justify-content:space-between; border-bottom:1px dashed var(--b3); padding:5px 0; }
+.result-box .row:last-child { border-bottom:none; }
+
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:16px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🏢 دجله لاب</h1>
+  <p>نظام الحضور والانصراف — النسخة الجديدة</p>
+</div>
+
+<div class="step">
+
+  <div class="card" id="loginCard">
+    <div class="stitle">تسجيل الدخول</div>
+    <div class="fg">
+      <label>كود الموظف</label>
+      <input type="text" id="employeeId" placeholder="اكتب كود الموظف"/>
+    </div>
+    <button class="btn bng" onclick="loadStatus()">دخول</button>
+  </div>
+
+  <div id="mainCard" style="display:none;">
+
+    <div class="emp-card">
+      <div class="emp-avatar" id="empAvatar">؟</div>
+      <div class="emp-name" id="empName">جاري التحميل...</div>
+    </div>
+
+    <div id="indicatorBox"></div>
+    <div id="workingBadgeBox"></div>
+
+    <div class="card" id="checkinCard">
+      <div class="stitle">تسجيل حضور</div>
+      <div class="fg">
+        <label>الفرع</label>
+        <select id="branch">
+          <option value="زهراء المعادي">زهراء المعادي</option>
+          <option value="كوتسيكا">كوتسيكا</option>
+          <option value="كورنيش طرة">كورنيش طرة</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>الشيفت</label>
+        <select id="shift">
+          <option value="شيفت 1">شيفت 1</option>
+          <option value="شيفت 2">شيفت 2</option>
+        </select>
+      </div>
+      <div class="att-btns">
+        <button class="att-in" id="checkinBtn" onclick="doCheckIn()">✅ تسجيل حضور</button>
+      </div>
+    </div>
+
+    <div class="card" id="checkoutCard" style="display:none;">
+      <div class="att-btns">
+        <button class="att-out" id="checkoutBtn" onclick="doCheckOut()">🚪 تسجيل انصراف</button>
+      </div>
+    </div>
+
+    <div class="result-box" id="resultBox"></div>
+  </div>
+
+</div>
+
+<div class="footer">Infinite Systems — دجله لاب</div>
+
+<script>
+  // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
+
+  let currentEmployeeId = null;
+  let currentStatus = null;
+
+  function apiCall(action, params) {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('action', action);
+    Object.keys(params || {}).forEach(k => {
+      if (params[k] !== null && params[k] !== undefined) url.searchParams.set(k, params[k]);
+    });
+    return fetch(url).then(r => r.json()).then(data => {
+      if (data && data.error) throw new Error(data.error);
+      return data;
+    });
+  }
+
+  function loadStatus() {
+    const id = document.getElementById('employeeId').value.trim();
+    if (!id) return alert('من فضلك اكتب كود الموظف');
+    currentEmployeeId = id;
+
+    document.getElementById('mainCard').style.display = 'block';
+    document.getElementById('empName').textContent = 'جاري التحميل...';
+    document.getElementById('indicatorBox').innerHTML = '';
+
+    apiCall('status', { employeeId: id })
+      .then(renderStatus)
+      .catch(showError);
+  }
+
+  function renderStatus(status) {
+    currentStatus = status;
+    document.getElementById('empName').textContent = status.name;
+    document.getElementById('empAvatar').textContent = status.name ? status.name.charAt(0) : '؟';
+
+    let indicatorHtml = '';
+    if (status.debtSuspended) {
+      indicatorHtml =
+        '<div class="timing-suspended">🔓 أنت معفى من نظام الخصومات' +
+        '<div class="timing-sub">الأوفر تايم ما زال يُحتسب ويُدفع بشكل طبيعي</div></div>';
+    } else if (status.currentDebtHours > 0 && status.debtStatus === 'معلَّق') {
+      indicatorHtml =
+        '<div class="timing-pending">🕓 عندك دين وقت مبدئي' +
+        '<div class="timing-balance">' + status.currentDebtHours.toFixed(2) + ' ساعة</div>' +
+        '<div class="timing-sub">لسه بانتظار نظر صاحب العمل — ممكن يتلغي</div>' +
+        '<span class="badge bg-pending">⏳ معلَّق — غير مؤكَّد بعد</span></div>';
+    } else if (status.currentDebtHours > 0) {
+      indicatorHtml =
+        '<div class="timing-late">⏱️ عندك دين وقت مؤكَّد' +
+        '<div class="timing-balance">' + status.currentDebtHours.toFixed(2) + ' ساعة</div>' +
+        '<div class="timing-sub">اشتغل أوفر تايم عشان تعوضه قبل آخر الشهر</div></div>';
+    } else {
+      indicatorHtml = '<div class="timing-ok">✅ أنت في المنطقة الآمنة<div class="timing-sub">مفيش أي دين وقت عليك دلوقتي</div></div>';
+    }
+    document.getElementById('indicatorBox').innerHTML = indicatorHtml;
+
+    const workingBox = document.getElementById('workingBadgeBox');
+    if (status.currentlyWorking) {
+      workingBox.innerHTML = '<div class="working-badge"><span class="wdot"></span> شغال دلوقتي — ' +
+        status.openShift.shift + ' / ' + status.openShift.branch + '</div>';
+      document.getElementById('checkinCard').style.display = 'none';
+      document.getElementById('checkoutCard').style.display = 'block';
+    } else {
+      workingBox.innerHTML = '';
+      document.getElementById('checkinCard').style.display = 'block';
+      document.getElementById('checkoutCard').style.display = 'none';
+    }
+  }
+
+  function doCheckIn() {
+    const branch = document.getElementById('branch').value;
+    const shift = document.getElementById('shift').value;
+    const btn = document.getElementById('checkinBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
+
+    apiCall('checkIn', { employeeId: currentEmployeeId, branch, shift })
+      .then(function(res){
+        btn.disabled = false;
+        btn.textContent = '✅ تسجيل حضور';
+        let html =
+          '<div class="row"><span>وقت الحضور</span><b>' + res.checkInTime + '</b></div>' +
+          '<div class="row"><span>الحالة</span><b>' + res.debtLabel + '</b></div>';
+        if (res.debtCreated > 0) {
+          html += '<div class="row"><span>دين ' + (res.debtStatus === 'معلَّق' ? 'معلَّق' : 'مؤكَّد') +
+            '</span><b>' + res.debtCreated.toFixed(2) + ' ساعة</b></div>';
+        }
+        showResult(true, html);
+        loadStatus();
+      })
+      .catch(function(err){
+        btn.disabled = false;
+        btn.textContent = '✅ تسجيل حضور';
+        showResult(false, err.message);
+      });
+  }
+
+  function doCheckOut() {
+    const btn = document.getElementById('checkoutBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
+
+    const branch = currentStatus.openShift ? currentStatus.openShift.branch : null;
+    const shift = currentStatus.openShift ? currentStatus.openShift.shift : null;
+
+    apiCall('checkOut', { employeeId: currentEmployeeId, branch, shift })
+      .then(function(res){
+        btn.disabled = false;
+        btn.textContent = '🚪 تسجيل انصراف';
+
+        if (res.status === 'يحتاج مراجعة') {
+          showResult(false, res.message);
+        } else {
+          let html =
+            '<div class="row"><span>ساعات العمل الفعلية</span><b>' + res.actualHours + ' ساعة</b></div>' +
+            '<div class="row"><span>أوفر تايم اليوم</span><b>' + res.overtimeHoursActual + ' ساعة</b></div>';
+          if (res.overtimeAppliedToDebt > 0) {
+            html += '<div class="row"><span>غطّى من الدين</span><b>' + res.debtSettledLabel + '</b></div>';
+          }
+          if (res.overtimePaidHours > 0) {
+            html += '<div class="row"><span>أوفر تايم مدفوع</span><b>' + res.overtimePaidHours + ' ساعة (' + res.overtimePaidAmount + ' ج.م)</b></div>';
+          }
+          if (res.earlyDepartureHours > 0) {
+            html += '<div class="row"><span>انصراف مبكر</span><b>' + res.earlyDepartureHours + ' ساعة</b></div>';
+          }
+          html += '<div class="row"><span>رصيد الدين الحالي</span><b>' + res.currentBalance.toFixed(2) + ' ساعة</b></div>';
+          showResult(true, html);
+        }
+        loadStatus();
+      })
+      .catch(function(err){
+        btn.disabled = false;
+        btn.textContent = '🚪 تسجيل انصراف';
+        showResult(false, err.message);
+      });
+  }
+
+  function showResult(ok, html) {
+    const box = document.getElementById('resultBox');
+    box.className = 'result-box show ' + (ok ? 'ok' : 'err');
+    box.innerHTML = html;
+  }
+
+  function showError(err) {
+    document.getElementById('empName').textContent = 'حصل خطأ';
+    showResult(false, err.message);
+  }
+</script>
+</body>
+</html>
