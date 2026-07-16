@@ -108,8 +108,10 @@ input:checked + .slider:before { transform:translateX(-20px); }
 .ec-edit { flex:1; padding:9px; border:none; border-radius:10px; background:var(--gl); color:var(--gd); font-family:"Cairo",sans-serif; font-size:.78rem; font-weight:700; cursor:pointer; }
 .ec-edit:active { transform:scale(.97); }
 .sdiv { font-size:.72rem; font-weight:800; color:var(--m); margin:10px 0 8px; }
-.status-pill { background:var(--gl); color:var(--gd); border:none; border-radius:20px; padding:4px 10px; font-family:"Cairo",sans-serif; font-size:.68rem; font-weight:700; }
+.status-pill { background:var(--gl); color:var(--gd); border:none; border-radius:20px; padding:4px 10px; font-family:"Cairo",sans-serif; font-size:.68rem; font-weight:700; cursor:pointer; }
+.status-pill:active { transform:scale(.95); }
 .status-pill.suspended { background:#fff8e8; color:#8a5a00; }
+.status-pill.inactive { background:#f5f5f5; color:var(--m); }
 
 /* بند 18: شاشة الرئيسية (Home Dashboard) */
 .dash-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:14px; }
@@ -231,10 +233,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
   </div>
 
   <div class="card" id="editEmpCard" style="display:none;">
-    <div class="stitle">تعديل موظف (بند 8.1 و8.2) — <span id="editEmpNameLbl"></span></div>
+    <div class="stitle">تعديل موظف (بند 8.0، 8.1، 8.2) — <span id="editEmpNameLbl"></span></div>
     <input type="hidden" id="editEmpId">
 
-    <div class="toggle-row">
+    <div class="row2">
+      <div class="fg"><label>الاسم</label><input type="text" id="editName"></div>
+      <div class="fg"><label>المرتب اليومي</label><input type="number" id="editSalary"></div>
+    </div>
+    <button class="btn bng bfull" onclick="submitUpdateInfo()">حفظ الاسم والمرتب</button>
+
+    <div class="toggle-row" style="margin-top:14px;">
       <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
       <label class="switch">
         <input type="checkbox" id="suspendToggle" onchange="submitSuspendToggle()">
@@ -249,6 +257,9 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
     <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
     <div class="msg" id="editEmpMsg"></div>
+
+    <button class="btn br bfull" id="deleteEmpBtn" style="display:none; margin-top:14px;" onclick="submitDeleteEmployee()">🗑️ حذف نهائي</button>
+    <div class="shint" id="deleteHint" style="display:none; margin-top:6px;">الحذف النهائي متاح فقط للموظف في حالة "غير نشط".</div>
   </div>
 </div>
 
@@ -485,18 +496,20 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
   function buildEmployeeCard(e) {
-    const suspended = (e.DeductionSuspended === true || e.DeductionSuspended === 'TRUE');
-    const statusPill = suspended
-      ? '<span class="status-pill suspended">🔓 معلَّق</span>'
-      : '<span class="status-pill">🟢 نشط</span>';
+    const isActive = (e.Status !== 'غير نشط'); // بند 8.0: حالة نشط/غير نشط — مطابقة لـ R1
+    const suspended = (e.DeductionSuspended === true || e.DeductionSuspended === 'TRUE'); // بند 8.1: تعليق الخصومات (مفهوم مختلف)
+    const statusPill = isActive
+      ? '<button class="status-pill" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'غير نشط\')">🟢 نشط</button>'
+      : '<button class="status-pill inactive" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'نشط\')">⚪ غير نشط</button>';
     const windowInfo = (e.CustomWindowStart && e.CustomWindowEnd)
       ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd
       : '—';
 
-    let h = '<div class="emp-card"><div class="ec-head">';
+    let h = '<div class="emp-card"' + (isActive ? '' : ' style="opacity:.8; border-style:dashed;"') + '><div class="ec-head">';
     h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">' + statusPill +
-      '<div class="ec-av">' + (e.Name ? e.Name.charAt(0) : '؟') + '</div></div>';
-    h += '<div class="ec-info"><div class="ec-name">' + e.Name + '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
+      '<div class="ec-av"' + (isActive ? '' : ' style="background:#f5f5f5; color:var(--m);"') + '>' + (e.Name ? e.Name.charAt(0) : '؟') + '</div></div>';
+    h += '<div class="ec-info"><div class="ec-name">' + e.Name + (suspended ? ' <span class="status-pill suspended" style="cursor:default;">🔓 معلَّق من الخصومات</span>' : '') +
+      '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
     h += '<div class="ec-body">';
     h += '<div><div class="ec-stat-lbl">المرتب اليومي</div><div class="ec-stat-val">' + Number(e.DailySalary).toLocaleString() + ' ج.م</div></div>';
     h += '<div><div class="ec-stat-lbl">نافذة مخصصة (بند 8.2)</div><div class="ec-stat-val">' + windowInfo + '</div></div>';
@@ -506,16 +519,54 @@ input:checked + .slider:before { transform:translateX(-20px); }
     return h;
   }
 
+  /** بند 8.0: تبديل حالة نشط/غير نشط مباشرة من شارة البطاقة — بدون فتح فورم التعديل */
+  function toggleStatus(id, newStatus) {
+    apiCall('toggleEmployeeStatus', { employeeId: id, status: newStatus })
+      .then(() => loadEmployeeList())
+      .catch(err => alert('خطأ: ' + err.message));
+  }
+
   function openEditEmployee(id) {
     const emp = cachedEmployees.find(e => String(e.EmployeeID) === String(id));
     if (!emp) return;
     document.getElementById('editEmpId').value = id;
     document.getElementById('editEmpNameLbl').textContent = emp.Name + ' (' + id + ')';
+    document.getElementById('editName').value = emp.Name;
+    document.getElementById('editSalary').value = emp.DailySalary;
     document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
     document.getElementById('windowStart').value = emp.CustomWindowStart || '';
     document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+
+    // بند 8.0: زرار الحذف النهائي يظهر فقط للموظف "غير نشط"
+    const isInactive = (emp.Status === 'غير نشط');
+    document.getElementById('deleteEmpBtn').style.display = isInactive ? 'block' : 'none';
+    document.getElementById('deleteHint').style.display = isInactive ? 'none' : 'block';
     document.getElementById('editEmpCard').style.display = 'block';
     document.getElementById('editEmpCard').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function submitUpdateInfo() {
+    const id = document.getElementById('editEmpId').value;
+    const name = document.getElementById('editName').value;
+    const dailySalary = Number(document.getElementById('editSalary').value);
+    if (!name || !dailySalary) return showMsg('editEmpMsg', false, 'من فضلك اكمل الاسم والمرتب');
+
+    apiCall('updateEmployeeInfo', { employeeId: id, name, dailySalary })
+      .then(() => { showMsg('editEmpMsg', true, 'تم تحديث الاسم والمرتب'); loadEmployeeList(); })
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  function submitDeleteEmployee() {
+    const id = document.getElementById('editEmpId').value;
+    if (!confirm('متأكد إنك عايز تحذف الموظف ده نهائيًا؟ الإجراء ده مايتراجعش عنه.')) return;
+
+    apiCall('deleteEmployeePermanently', { employeeId: id })
+      .then(() => {
+        showMsg('editEmpMsg', true, 'تم الحذف النهائي');
+        document.getElementById('editEmpCard').style.display = 'none';
+        loadEmployeeList();
+      })
+      .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
   function submitSuspendToggle() {
