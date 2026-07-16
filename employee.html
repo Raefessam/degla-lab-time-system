@@ -109,12 +109,16 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 <div class="step">
 
   <div class="card" id="loginCard">
-    <div class="stitle">تسجيل الدخول</div>
+    <div class="stitle">🔐 تحقق من هويتك</div>
+    <div class="fg">
+      <label>الاسم الثلاثي بالعربي</label>
+      <input type="text" id="employeeName" placeholder="أحمد محمد علي"/>
+    </div>
     <div class="fg">
       <label>كود الموظف</label>
-      <input type="text" id="employeeId" placeholder="اكتب كود الموظف"/>
+      <input type="text" id="employeeId" placeholder="E001" style="text-transform:uppercase;"/>
     </div>
-    <button class="btn bng" onclick="loadStatus()">دخول</button>
+    <button class="btn bng" id="loginBtn" onclick="loadStatus()">تحقق من الهوية</button>
   </div>
 
   <div id="mainCard" style="display:none;">
@@ -253,15 +257,42 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   }
 
   function loadStatus() {
-    const id = document.getElementById('employeeId').value.trim();
-    if (!id) return alert('من فضلك اكتب كود الموظف');
-    currentEmployeeId = id;
+    const name = document.getElementById('employeeName').value.trim();
+    const id = document.getElementById('employeeId').value.trim().toUpperCase();
 
-    document.getElementById('mainCard').style.display = 'block';
+    if (!name || name.split(' ').filter(Boolean).length < 3) {
+      return alert('⚠️ أدخل الاسم الثلاثي كاملاً');
+    }
+    if (!id) return alert('⚠️ أدخل كود الموظف');
+
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'جاري التحقق <span class="spinner"></span>';
+
+    apiCall('verifyEmployee', { name, code: id })
+      .then(res => {
+        btn.disabled = false;
+        btn.textContent = 'تحقق من الهوية';
+        if (!res.valid) {
+          alert('❌ بيانات غير صحيحة أو الموظف غير نشط');
+          return;
+        }
+        currentEmployeeId = res.code;
+        document.getElementById('mainCard').style.display = 'block';
+        refreshStatus();
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'تحقق من الهوية';
+        alert('❌ تعذر الاتصال: ' + err.message);
+      });
+  }
+
+  /** تحديث الحالة فقط — بدون إعادة تحقق من الهوية (تُستخدم بعد كل حضور/انصراف) */
+  function refreshStatus() {
     document.getElementById('empName').textContent = 'جاري التحميل...';
     document.getElementById('indicatorBox').innerHTML = '';
-
-    apiCall('status', { employeeId: id })
+    apiCall('status', { employeeId: currentEmployeeId })
       .then(renderStatus)
       .catch(showError);
   }
@@ -330,7 +361,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
             '</span><b>' + res.debtCreated.toFixed(2) + ' ساعة</b></div>';
         }
         showResult(true, html);
-        loadStatus();
+        refreshStatus();
       })
       .catch(function(err){
         btn.disabled = false;
@@ -370,7 +401,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
           html += '<div class="row"><span>رصيد الدين الحالي</span><b>' + res.currentBalance.toFixed(2) + ' ساعة</b></div>';
           showResult(true, html);
         }
-        loadStatus();
+        refreshStatus();
       })
       .catch(function(err){
         btn.disabled = false;
