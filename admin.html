@@ -85,6 +85,28 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .req-meta { font-size:.72rem; color:var(--m); margin-bottom:4px; }
 .req-detail { font-size:.8rem; color:var(--t); margin-bottom:10px; }
 .req-actions { display:flex; gap:8px; }
+
+/* بند 23: تقرير المرتب المفصَّل */
+.rep-section-title { font-weight:900; font-size:.85rem; color:var(--gd); margin:16px 0 8px; }
+.rep-mini-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-bottom:6px; }
+.rep-mini-card { background:white; border:1.5px solid var(--b3); border-radius:12px; padding:10px 8px; text-align:center; }
+.rep-mini-num { font-size:1.15rem; font-weight:900; color:var(--t); }
+.rep-mini-lbl { font-size:.62rem; color:var(--m); font-weight:700; margin-top:2px; }
+.rep-mini-card.warn .rep-mini-num { color:#B9770E; }
+.rep-mini-card.danger .rep-mini-num { color:var(--r); }
+.rep-mini-card.ok .rep-mini-num { color:var(--gd); }
+
+.rep-breakdown { background:white; border-radius:14px; border:1.5px solid var(--b3); overflow:hidden; margin-top:10px; }
+.rep-line { display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--b3); font-size:.85rem; }
+.rep-line:last-child { border-bottom:none; }
+.rep-line.add .rep-val { color:var(--gd); }
+.rep-line.sub .rep-val { color:var(--r); }
+.rep-line.net { background:var(--gl); font-weight:900; font-size:1rem; }
+.rep-line.net .rep-val { color:var(--gd); }
+.rep-val { font-weight:700; }
+
+.rep-adv-row { display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dashed var(--b3); font-size:.78rem; }
+.rep-adv-row:last-child { border-bottom:none; }
 .bfull { width:100%; }
 .btn:active { transform:scale(.98); }
 
@@ -355,7 +377,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
 <div class="panel" id="panel-reports">
   <div class="card">
-    <div class="stitle">حساب مرتب موظف لشهر معين (منهج الجمع — بند 12)</div>
+    <div class="stitle">تقرير المرتب الشهري المفصَّل (بند 23)</div>
     <div class="row2">
       <div class="fg"><label>كود الموظف</label><input type="text" id="repEmpId"></div>
       <div class="fg">
@@ -366,9 +388,10 @@ input:checked + .slider:before { transform:translateX(-20px); }
         </div>
       </div>
     </div>
-    <button class="btn bng bfull" onclick="submitMonthlyReport()">حساب المرتب 📊</button>
-    <div id="reportResult" style="margin-top:12px;"></div>
+    <button class="btn bng bfull" onclick="submitDetailedReport()">إنشاء التقرير 📊</button>
   </div>
+
+  <div id="reportResult"></div>
 </div>
 
 <!-- بند 6: قفل الشهر -->
@@ -795,24 +818,80 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
 
-  function submitMonthlyReport() {
+  function submitDetailedReport() {
     const empId = document.getElementById('repEmpId').value.trim();
     const year = Number(document.getElementById('repYear').value);
     const month = Number(document.getElementById('repMonth').value);
     if (!empId || !year || !month) return;
 
-    document.getElementById('reportResult').innerHTML = 'جاري الحساب...';
-    apiCall('calculateMonthlySalary', { employeeId: empId, year, month })
-      .then(res => {
-        document.getElementById('reportResult').innerHTML =
-          '<table class="data-table">' +
-          '<tr><th>البند</th><th>القيمة</th></tr>' +
-          '<tr><td>المرتب الأساسي</td><td>' + res.baseSalary + ' ج.م</td></tr>' +
-          '<tr><td>الأوفر تايم المدفوع</td><td>' + res.overtimePaid + ' ج.م</td></tr>' +
-          '</table>' +
-          '<div class="rp-net"><div class="rp-net-lbl">صافي المرتب</div><div class="rp-net-val">' + res.netSalary + ' ج.م</div></div>';
-      })
-      .catch(err => document.getElementById('reportResult').innerHTML = 'خطأ: ' + err.message);
+    document.getElementById('reportResult').innerHTML = '<div class="empty">جاري إنشاء التقرير...</div>';
+    apiCall('detailedMonthlyReport', { employeeId: empId, year, month })
+      .then(renderDetailedReport)
+      .catch(err => document.getElementById('reportResult').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+  }
+
+  function renderDetailedReport(r) {
+    let html = '<div class="card">';
+    html += '<div class="stitle">' + r.employeeName + ' (' + r.employeeId + ') — ' + r.month + '/' + r.year + '</div>';
+
+    // أ. ملخص الحضور
+    html += '<div class="rep-section-title">أ. ملخص الحضور</div>';
+    html += '<div class="rep-mini-cards">';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.daysWorked + '</div><div class="rep-mini-lbl">أيام حضور</div></div>';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.totalHours + '</div><div class="rep-mini-lbl">إجمالي الساعات</div></div>';
+    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.lateCount + '</div><div class="rep-mini-lbl">مرات تأخير</div></div>';
+    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="rep-mini-lbl">انصراف مبكر</div></div>';
+    html += '</div>';
+
+    // ب. الدين والتعويض
+    html += '<div class="rep-section-title">ب. الدين والتعويض</div>';
+    html += '<div class="rep-mini-cards">';
+    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.debtSummary.createdThisMonth + '</div><div class="rep-mini-lbl">دين نشأ هذا الشهر (ساعة)</div></div>';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.debtSummary.settledThisMonth + '</div><div class="rep-mini-lbl">تمت تغطيته بالأوفر تايم</div></div>';
+    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.debtSummary.remainingBalance + '</div><div class="rep-mini-lbl">الرصيد المتبقي (ساعة)</div></div>';
+    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.debtSummary.remainingDeduction + '</div><div class="rep-mini-lbl">قيمته المالية (ج.م)</div></div>';
+    html += '</div>';
+
+    // ج. الأوفر تايم المدفوع
+    html += '<div class="rep-section-title">ج. الأوفر تايم المدفوع</div>';
+    html += '<div class="rep-mini-cards">';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.overtimeSummary.paidHours + '</div><div class="rep-mini-lbl">ساعات مدفوعة</div></div>';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.overtimeSummary.paidAmount + '</div><div class="rep-mini-lbl">القيمة (ج.م)</div></div>';
+    html += '</div>';
+
+    // د. الغياب
+    html += '<div class="rep-section-title">د. الغياب</div>';
+    html += '<div class="rep-mini-cards">';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.absenceSummary.authorizedDays + '</div><div class="rep-mini-lbl">أيام غياب بإذن</div></div>';
+    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.absenceSummary.unauthorizedDays + '</div><div class="rep-mini-lbl">أيام غياب بدون إذن</div></div>';
+    html += '</div>';
+
+    // هـ. السلف
+    html += '<div class="rep-section-title">هـ. السلف المعتمدة هذا الشهر</div>';
+    if (r.advances.length === 0) {
+      html += '<div class="empty" style="padding:14px;">لا توجد سلف معتمدة هذا الشهر</div>';
+    } else {
+      html += '<div class="rep-breakdown">';
+      r.advances.forEach(a => {
+        html += '<div class="rep-adv-row"><span>' + a.date + (a.reason ? ' — ' + a.reason : '') + '</span><span>' + a.amount.toLocaleString() + ' ج.م</span></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>'; // end card
+
+    // و. كشف المرتب النهائي
+    html += '<div class="card">';
+    html += '<div class="stitle">و. كشف المرتب النهائي</div>';
+    html += '<div class="rep-breakdown">';
+    html += '<div class="rep-line add"><span>+ المرتب الأساسي</span><span class="rep-val">' + r.breakdown.baseSalary.toLocaleString() + ' ج.م</span></div>';
+    html += '<div class="rep-line add"><span>+ الأوفر تايم المدفوع</span><span class="rep-val">' + r.breakdown.overtimePaid.toLocaleString() + ' ج.م</span></div>';
+    html += '<div class="rep-line sub"><span>− خصم دين الوقت المتبقي</span><span class="rep-val">' + r.breakdown.debtDeduction.toLocaleString() + ' ج.م</span></div>';
+    html += '<div class="rep-line sub"><span>− خصم السلف المعتمدة</span><span class="rep-val">' + r.breakdown.advanceDeduction.toLocaleString() + ' ج.م</span></div>';
+    html += '<div class="rep-line net"><span>= صافي المرتب</span><span class="rep-val">' + r.breakdown.netSalary.toLocaleString() + ' ج.م</span></div>';
+    html += '</div></div>';
+
+    document.getElementById('reportResult').innerHTML = html;
   }
 
   function submitCloseMonth() {
