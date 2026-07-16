@@ -94,6 +94,23 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
 .empty { text-align:center; padding:26px; color:var(--b4); font-size:.82rem; }
 
+/* بطاقات الموظفين — مأخوذة من R1 حرفيًا (dejla_admin_v9.html) */
+.emp-card { background:white; border-radius:16px; margin-bottom:10px; border:1.5px solid var(--b3); box-shadow:0 2px 8px rgba(0,0,0,.04); overflow:hidden; }
+.ec-head { padding:12px 14px; display:flex; align-items:center; gap:10px; }
+.ec-av { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:900; flex-shrink:0; background:var(--gl); color:var(--gd); }
+.ec-info { flex:1; min-width:0; }
+.ec-name { font-weight:900; font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ec-meta { font-size:.68rem; color:var(--m); margin-top:2px; }
+.ec-body { padding:8px 14px 10px; border-top:1px solid var(--b3); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.ec-stat-lbl { font-size:.6rem; color:var(--m); font-weight:600; }
+.ec-stat-val { font-size:.78rem; font-weight:700; margin-top:1px; }
+.ec-actions { padding:8px 14px 10px; border-top:1px solid var(--b3); display:flex; gap:8px; }
+.ec-edit { flex:1; padding:9px; border:none; border-radius:10px; background:var(--gl); color:var(--gd); font-family:"Cairo",sans-serif; font-size:.78rem; font-weight:700; cursor:pointer; }
+.ec-edit:active { transform:scale(.97); }
+.sdiv { font-size:.72rem; font-weight:800; color:var(--m); margin:10px 0 8px; }
+.status-pill { background:var(--gl); color:var(--gd); border:none; border-radius:20px; padding:4px 10px; font-family:"Cairo",sans-serif; font-size:.68rem; font-weight:700; }
+.status-pill.suspended { background:#fff8e8; color:#8a5a00; }
+
 /* بند 18: شاشة الرئيسية (Home Dashboard) */
 .dash-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:14px; }
 .dash-card { border-radius:14px; padding:14px 10px; text-align:center; border:1.5px solid var(--b3); background:white; }
@@ -205,27 +222,33 @@ input:checked + .slider:before { transform:translateX(-20px); }
   </div>
 
   <div class="card">
-    <div class="stitle">تعديل موظف (بند 8.1 و8.2)</div>
-    <div class="fg"><label>كود الموظف</label><input type="text" id="editEmpId" placeholder="كود الموظف"></div>
-    <button class="btn bng" onclick="loadEmployeeForEdit()">تحميل بيانات الموظف</button>
-
-    <div id="editEmpForm" style="display:none; margin-top:14px;">
-      <div class="toggle-row">
-        <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
-        <label class="switch">
-          <input type="checkbox" id="suspendToggle" onchange="submitSuspendToggle()">
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="fg" style="margin-top:12px;"><label>نافذة الحضور — من (بند 8.2)</label><input type="text" id="windowStart" placeholder="18:00"></div>
-      <div class="fg-hint">إلزامي بنظام 24 ساعة — اكتب "18:00" مش "6"</div>
-      <div class="fg"><label>نافذة الحضور — إلى</label><input type="text" id="windowEnd" placeholder="23:00"></div>
-      <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
-
-      <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
-      <div class="msg" id="editEmpMsg"></div>
+    <div class="stitle">قائمة الموظفين <button class="mini-btn" onclick="loadEmployeeList()">تحديث</button></div>
+    <div style="position:relative; margin-bottom:12px;">
+      <input type="text" id="empSearch" placeholder="بحث باسم أو كود..." oninput="searchEmployees(this.value)"
+        style="width:100%; padding:11px 14px; border:2px solid var(--b3); border-radius:12px; font-family:'Cairo',sans-serif; font-size:.88rem; outline:none; background:white;"/>
     </div>
+    <div id="empList"><div class="empty">جاري التحميل...</div></div>
+  </div>
+
+  <div class="card" id="editEmpCard" style="display:none;">
+    <div class="stitle">تعديل موظف (بند 8.1 و8.2) — <span id="editEmpNameLbl"></span></div>
+    <input type="hidden" id="editEmpId">
+
+    <div class="toggle-row">
+      <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
+      <label class="switch">
+        <input type="checkbox" id="suspendToggle" onchange="submitSuspendToggle()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="fg" style="margin-top:12px;"><label>نافذة الحضور — من (بند 8.2)</label><input type="text" id="windowStart" placeholder="18:00"></div>
+    <div class="fg-hint">إلزامي بنظام 24 ساعة — اكتب "18:00" مش "6"</div>
+    <div class="fg"><label>نافذة الحضور — إلى</label><input type="text" id="windowEnd" placeholder="23:00"></div>
+    <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
+
+    <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
+    <div class="msg" id="editEmpMsg"></div>
   </div>
 </div>
 
@@ -316,6 +339,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
       document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
       if (tab.dataset.panel === 'review') loadReviewList();
       if (tab.dataset.panel === 'home') loadDashboard();
+      if (tab.dataset.panel === 'employees') loadEmployeeList();
     });
   });
 
@@ -420,36 +444,92 @@ input:checked + .slider:before { transform:translateX(-20px); }
     if (!data.name || !data.dailySalary) return showMsg('addEmpMsg', false, 'من فضلك اكمل كل الحقول');
 
     apiCall('addEmployee', data)
-      .then(res => showMsg('addEmpMsg', true, 'تمت إضافة الموظف بكود: ' + res.employeeId))
+      .then(res => {
+        showMsg('addEmpMsg', true, 'تمت إضافة الموظف بكود: ' + res.employeeId);
+        document.getElementById('newName').value = '';
+        document.getElementById('newSalary').value = '';
+        loadEmployeeList();
+      })
       .catch(err => showMsg('addEmpMsg', false, err.message));
   }
 
-  function loadEmployeeForEdit() {
-    const id = document.getElementById('editEmpId').value.trim();
-    if (!id) return;
-    apiCall('employeeById', { employeeId: id })
-      .then(emp => {
-        if (!emp) return showMsg('editEmpMsg', false, 'الموظف غير موجود');
-        document.getElementById('editEmpForm').style.display = 'block';
-        document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
-        document.getElementById('windowStart').value = emp.CustomWindowStart || '';
-        document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+  let cachedEmployees = [];
+
+  /** قائمة الموظفين بأسلوب R1 (بحث + كروت) — بند 8 */
+  function loadEmployeeList() {
+    document.getElementById('empList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    apiCall('employees')
+      .then(emps => {
+        cachedEmployees = emps || [];
+        renderEmployeeList(cachedEmployees, '');
       })
-      .catch(err => showMsg('editEmpMsg', false, err.message));
+      .catch(err => document.getElementById('empList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+  }
+
+  function searchEmployees(query) {
+    renderEmployeeList(cachedEmployees, query);
+  }
+
+  function renderEmployeeList(emps, query) {
+    const q = (query || '').toLowerCase();
+    const filtered = q ? emps.filter(e => e.Name.toLowerCase().includes(q) || String(e.EmployeeID).toLowerCase().includes(q)) : emps;
+
+    if (filtered.length === 0) {
+      document.getElementById('empList').innerHTML = '<div class="empty">' + (q ? 'لم يتم العثور على نتائج' : 'مفيش موظفين مسجلين لسه') + '</div>';
+      return;
+    }
+
+    let html = '<div class="sdiv">نشطون على القوة (' + filtered.length + ')</div>';
+    filtered.forEach(e => { html += buildEmployeeCard(e); });
+    document.getElementById('empList').innerHTML = html;
+  }
+
+  function buildEmployeeCard(e) {
+    const suspended = (e.DeductionSuspended === true || e.DeductionSuspended === 'TRUE');
+    const statusPill = suspended
+      ? '<span class="status-pill suspended">🔓 معلَّق</span>'
+      : '<span class="status-pill">🟢 نشط</span>';
+    const windowInfo = (e.CustomWindowStart && e.CustomWindowEnd)
+      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd
+      : '—';
+
+    let h = '<div class="emp-card"><div class="ec-head">';
+    h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">' + statusPill +
+      '<div class="ec-av">' + (e.Name ? e.Name.charAt(0) : '؟') + '</div></div>';
+    h += '<div class="ec-info"><div class="ec-name">' + e.Name + '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
+    h += '<div class="ec-body">';
+    h += '<div><div class="ec-stat-lbl">المرتب اليومي</div><div class="ec-stat-val">' + Number(e.DailySalary).toLocaleString() + ' ج.م</div></div>';
+    h += '<div><div class="ec-stat-lbl">نافذة مخصصة (بند 8.2)</div><div class="ec-stat-val">' + windowInfo + '</div></div>';
+    h += '</div><div class="ec-actions">';
+    h += '<button class="ec-edit" onclick="openEditEmployee(\'' + e.EmployeeID + '\')">✏️ تعديل</button>';
+    h += '</div></div>';
+    return h;
+  }
+
+  function openEditEmployee(id) {
+    const emp = cachedEmployees.find(e => String(e.EmployeeID) === String(id));
+    if (!emp) return;
+    document.getElementById('editEmpId').value = id;
+    document.getElementById('editEmpNameLbl').textContent = emp.Name + ' (' + id + ')';
+    document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
+    document.getElementById('windowStart').value = emp.CustomWindowStart || '';
+    document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+    document.getElementById('editEmpCard').style.display = 'block';
+    document.getElementById('editEmpCard').scrollIntoView({ behavior: 'smooth' });
   }
 
   function submitSuspendToggle() {
     const checked = document.getElementById('suspendToggle').checked;
-    apiCall('setDeductionSuspension', { employeeId: document.getElementById('editEmpId').value.trim(), suspended: checked })
-      .then(() => showMsg('editEmpMsg', true, checked ? 'تم تفعيل الإعفاء من الخصومات' : 'تم إلغاء الإعفاء'))
+    apiCall('setDeductionSuspension', { employeeId: document.getElementById('editEmpId').value, suspended: checked })
+      .then(() => { showMsg('editEmpMsg', true, checked ? 'تم تفعيل الإعفاء من الخصومات' : 'تم إلغاء الإعفاء'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
   function submitCustomWindow() {
     const start = document.getElementById('windowStart').value;
     const end = document.getElementById('windowEnd').value;
-    apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value.trim(), start, end })
-      .then(() => showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'))
+    apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value, start, end })
+      .then(() => { showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
