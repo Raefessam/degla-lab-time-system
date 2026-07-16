@@ -55,6 +55,22 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .btn { padding:12px 18px; border:none; border-radius:13px; font-family:"Cairo",sans-serif; font-size:.85rem; font-weight:900; cursor:pointer; transition:all .2s; }
 .bng { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; box-shadow:0 4px 12px rgba(78,144,18,.28); }
 .br { background:linear-gradient(135deg,#e53935,#c62828); color:white; box-shadow:0 4px 12px rgba(197,40,40,.25); }
+.bno { background:white; border:2px solid var(--b3); color:var(--m); }
+.bno.act-filter { border-color:var(--g); color:var(--gd); background:var(--gl); }
+
+/* بند 19: سجل الحضور */
+.att-item { display:flex; align-items:center; gap:12px; padding:12px 6px; border-bottom:1px solid var(--b3); }
+.att-item:last-child { border-bottom:none; }
+.att-icon { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
+.att-icon.in { background:var(--gl); color:var(--gd); }
+.att-icon.out { background:var(--rl); color:var(--r); }
+.att-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; margin-bottom:3px; }
+.att-badge.in { background:var(--gl); color:var(--gd); }
+.att-badge.out { background:var(--rl); color:var(--r); }
+.att-time { font-size:.7rem; color:var(--m); }
+.att-info { flex:1; min-width:0; }
+.att-name { font-weight:900; font-size:.85rem; }
+.att-meta { font-size:.72rem; color:var(--m); margin-top:2px; }
 .bfull { width:100%; }
 .btn:active { transform:scale(.98); }
 
@@ -152,6 +168,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <div class="tab-bar">
   <button class="tab-btn act" data-panel="home">🏠 الرئيسية</button>
   <button class="tab-btn" data-panel="review">🔎 مراجعة</button>
+  <button class="tab-btn" data-panel="attlog">📋 سجل الحضور</button>
   <button class="tab-btn" data-panel="employees">👥 الموظفين</button>
   <button class="tab-btn" data-panel="absence">📅 الغياب</button>
   <button class="tab-btn" data-panel="reports">📊 التقارير</button>
@@ -207,6 +224,26 @@ input:checked + .slider:before { transform:translateX(-20px); }
     <div class="fg"><label>ملاحظة</label><input type="text" id="mcNote" placeholder="سبب التسجيل اليدوي"></div>
     <button class="btn bng bfull" onclick="submitManualCheckout()">تأكيد التسجيل اليدوي</button>
     <div class="msg" id="mcMsg"></div>
+  </div>
+</div>
+
+<!-- بند 19: سجل الحضور الكامل -->
+<div class="panel" id="panel-attlog">
+  <div class="card">
+    <div class="stitle">سجل الحضور <button class="mini-btn" onclick="loadAttendanceLog()">تحديث</button></div>
+
+    <div class="row2" style="margin-bottom:10px;">
+      <button class="btn bng" id="attFilterAll" onclick="setAttFilter('all')">الكل</button>
+      <button class="btn bno" id="attFilterToday" onclick="setAttFilter('today')">اليوم</button>
+    </div>
+    <div class="fg"><input type="date" id="attDatePicker" onchange="setAttFilter('date')"></div>
+    <div style="position:relative; margin-bottom:8px;">
+      <input type="text" id="attSearch" placeholder="بحث بالاسم أو الكود..." oninput="renderAttendanceLog()"
+        style="width:100%; padding:11px 14px; border:2px solid var(--b3); border-radius:12px; font-family:'Cairo',sans-serif; font-size:.88rem; outline:none; background:white;"/>
+    </div>
+    <div id="attCount" style="font-size:.72rem; color:var(--m); margin-bottom:10px;"></div>
+
+    <div id="attLogList"><div class="empty">جاري التحميل...</div></div>
   </div>
 </div>
 
@@ -361,6 +398,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
       if (tab.dataset.panel === 'review') loadReviewList();
       if (tab.dataset.panel === 'home') loadDashboard();
       if (tab.dataset.panel === 'employees') loadEmployeeList();
+      if (tab.dataset.panel === 'attlog') loadAttendanceLog();
     });
   });
 
@@ -406,6 +444,59 @@ input:checked + .slider:before { transform:translateX(-20px); }
       });
       branchBox.innerHTML = html;
     }
+  }
+
+  // ---- بند 19: سجل الحضور — تحميل مرة واحدة، فلترة محلية بالكامل ----
+  let cachedAttLog = [];
+  let attFilterMode = 'all'; // 'all' | 'today' | 'date'
+  let attFilterDate = '';
+
+  function loadAttendanceLog() {
+    document.getElementById('attLogList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    apiCall('attendanceLog')
+      .then(events => { cachedAttLog = events || []; renderAttendanceLog(); })
+      .catch(err => document.getElementById('attLogList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+  }
+
+  function setAttFilter(mode) {
+    attFilterMode = mode;
+    if (mode === 'date') attFilterDate = document.getElementById('attDatePicker').value;
+    document.getElementById('attFilterAll').className = 'btn ' + (mode === 'all' ? 'bng' : 'bno');
+    document.getElementById('attFilterToday').className = 'btn ' + (mode === 'today' ? 'bng' : 'bno');
+    renderAttendanceLog();
+  }
+
+  function renderAttendanceLog() {
+    const todayStr = new Date().toLocaleDateString('en-CA'); // yyyy-MM-dd بتوقيت الجهاز المحلي (نفس أسلوب R1)
+    const query = (document.getElementById('attSearch').value || '').toLowerCase();
+
+    let filtered = cachedAttLog;
+    if (attFilterMode === 'today') filtered = filtered.filter(e => e.date === todayStr);
+    else if (attFilterMode === 'date' && attFilterDate) filtered = filtered.filter(e => e.date === attFilterDate);
+
+    if (query) {
+      filtered = filtered.filter(e => e.employeeName.toLowerCase().includes(query) || String(e.employeeId).toLowerCase().includes(query));
+    }
+
+    document.getElementById('attCount').textContent = filtered.length + ' سجل — من إجمالي ' + cachedAttLog.length;
+
+    if (filtered.length === 0) {
+      document.getElementById('attLogList').innerHTML = '<div class="empty">مفيش سجلات مطابقة</div>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(e => {
+      const isIn = e.type === 'حضور';
+      html += '<div class="att-item">';
+      html += '<div class="att-icon ' + (isIn ? 'in' : 'out') + '">' + (isIn ? '▲' : '▼') + '</div>';
+      html += '<div class="att-info">';
+      html += '<span class="att-badge ' + (isIn ? 'in' : 'out') + '">' + e.type + '</span> <span class="att-time">' + e.time + ' — ' + e.date + '</span>';
+      html += '<div class="att-name">' + e.employeeName + '</div>';
+      html += '<div class="att-meta">فرع ' + e.branch + ' / ' + e.shift + ' — ' + e.note + '</div>';
+      html += '</div></div>';
+    });
+    document.getElementById('attLogList').innerHTML = html;
   }
 
   function loadReviewList() {
