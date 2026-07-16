@@ -58,6 +58,17 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .hist-row { display:flex; justify-content:space-between; align-items:center; padding:9px 6px; border-bottom:1px solid var(--b3); font-size:.78rem; }
 .hist-row:last-child { border-bottom:none; }
 .no-data { text-align:center; padding:20px; color:var(--b4); font-size:.82rem; }
+
+/* بند 26: شارات حالة الطلبات في "طلباتي" */
+.myreq-card { background:var(--gp); border:1.5px solid var(--b3); border-radius:12px; padding:12px; margin-bottom:10px; }
+.myreq-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.myreq-type { font-weight:900; font-size:.8rem; color:var(--gd); }
+.myreq-status { padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.myreq-status.pending { background:#fff8e8; color:#8a5a00; }
+.myreq-status.approved { background:var(--gl); color:var(--gd); }
+.myreq-status.rejected { background:var(--rl); color:var(--r); }
+.myreq-detail { font-size:.76rem; color:var(--t); }
+.myreq-date { font-size:.68rem; color:var(--m); margin-top:4px; }
 .btn:active { transform:scale(.98); }
 .btn:disabled { opacity:.6; cursor:not-allowed; }
 
@@ -97,6 +108,30 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 @keyframes spin { to{transform:rotate(360deg)} }
 
 .footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:16px; }
+
+/* بند 25.2: الساعة الحية */
+.clock { text-align:center; font-size:1.6rem; font-weight:900; color:var(--gd); font-family:monospace; letter-spacing:2px; margin-bottom:12px; }
+
+/* بند 25.1: إيصال تأكيد بعد التسجيل — مطابق لـ R1 حرفيًا */
+#confirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9999; align-items:center; justify-content:center; }
+#confirmModal.show { display:flex; }
+.confirm-box { background:white; border-radius:24px; padding:40px 30px; text-align:center; max-width:90vw; width:380px; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:slideUp .4s cubic-bezier(.34,1.56,.64,1); }
+@keyframes slideUp { from { transform:translateY(100px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.confirm-icon { font-size:4rem; margin-bottom:16px; animation:bounce .6s ease-in-out; }
+@keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+.confirm-title { font-size:1.4rem; font-weight:900; color:var(--t); margin-bottom:8px; }
+.confirm-sub { font-size:.95rem; color:var(--m); margin-bottom:20px; line-height:1.6; }
+.confirm-details { background:var(--gp); border-radius:14px; padding:16px; margin-bottom:20px; text-align:right; font-size:.85rem; color:var(--t); }
+.confirm-detail-row { display:flex; justify-content:space-between; margin-bottom:8px; }
+.confirm-detail-row:last-child { margin-bottom:0; }
+.confirm-label { color:var(--m); font-weight:700; }
+.confirm-value { font-weight:900; color:var(--gd); }
+.confirm-code { background:var(--gl); border:2px dashed var(--gd); border-radius:12px; padding:12px; font-size:1.2rem; font-weight:900; color:var(--gd); margin-bottom:20px; letter-spacing:2px; font-family:monospace; }
+.confirm-timer { font-size:.72rem; color:var(--m); margin-bottom:16px; }
+.timer-bar { height:4px; background:var(--b3); border-radius:4px; margin-top:6px; overflow:hidden; }
+.timer-fill { height:100%; background:var(--gd); width:100%; animation:timerShrink 10s linear forwards; }
+@keyframes timerShrink { from { width:100%; } to { width:0%; } }
+.confirm-btn { padding:12px 24px; border:none; border-radius:12px; font-family:"Cairo",sans-serif; font-size:.9rem; font-weight:900; cursor:pointer; background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; width:100%; }
 </style>
 </head>
 <body>
@@ -122,6 +157,8 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   </div>
 
   <div id="mainCard" style="display:none;">
+
+    <div class="clock" id="clockDisp">00:00:00</div>
 
     <div class="emp-card">
       <div class="emp-avatar" id="empAvatar">؟</div>
@@ -164,6 +201,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     <div class="card" id="mainMenuCard">
       <button class="btn bno bfull" onclick="openMonthlyHistory()">📊 السجل الشهري</button>
       <button class="btn bno bfull" style="margin-top:10px;" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
+      <button class="btn bno bfull" style="margin-top:10px;" onclick="openMyRequests()">🗂️ طلباتي</button>
       <button class="btn bno bfull" style="margin-top:10px;" onclick="logoutEmployee()">🔙 رجوع</button>
     </div>
 
@@ -232,6 +270,45 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   </div>
 </div>
 
+<!-- بند 26: نافذة "طلباتي" -->
+<div id="myRequestsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:9998; overflow-y:auto; padding:20px 0;">
+  <div style="background:white; border-radius:15px; max-width:480px; margin:20px auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="color:var(--gd); font-weight:900; margin:0; font-size:1rem;">🗂️ طلباتي</h2>
+      <button onclick="closeMyRequests()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--m);">✕</button>
+    </div>
+
+    <div id="myRequestsContainer" style="max-height:420px; overflow-y:auto;"><div class="no-data">جاري التحميل...</div></div>
+
+    <button class="btn bng bfull" style="margin-top:12px;" onclick="closeMyRequests()">إغلاق</button>
+  </div>
+</div>
+
+<!-- بند 25.1: إيصال تأكيد بعد التسجيل — مطابق لـ R1 -->
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">🟢</div>
+    <div class="confirm-title" id="confirmTitle">تم التسجيل بنجاح!</div>
+    <div class="confirm-sub" id="confirmMessage">تم تسجيل حضورك في النظام</div>
+
+    <div class="confirm-details">
+      <div class="confirm-detail-row"><span class="confirm-value" id="confirmName">—</span><span class="confirm-label">الاسم:</span></div>
+      <div class="confirm-detail-row"><span class="confirm-value" id="confirmTime">—</span><span class="confirm-label">الوقت:</span></div>
+      <div class="confirm-detail-row"><span class="confirm-value" id="confirmBranch">—</span><span class="confirm-label">الفرع:</span></div>
+      <div class="confirm-detail-row"><span class="confirm-value" id="confirmShift">—</span><span class="confirm-label">الشيفت:</span></div>
+    </div>
+
+    <div class="confirm-code" id="confirmCode">###</div>
+
+    <div class="confirm-timer">
+      <div id="confirmCountdown">إغلاق تلقائي بعد 10 ثواني...</div>
+      <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+    </div>
+
+    <button class="confirm-btn" onclick="closeConfirmModal()">✅ تم التسجيل</button>
+  </div>
+</div>
+
 <div class="footer">Infinite Systems — دجله لاب</div>
 
 <script>
@@ -277,6 +354,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         currentEmployeeId = res.code;
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('mainCard').style.display = 'block';
+        startClock();
         refreshStatus();
       })
       .catch(err => {
@@ -351,8 +429,10 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       .then(function(res){
         btn.disabled = false;
         btn.textContent = '✅ تسجيل حضور';
+
+        showConfirmModal('حضور', currentStatus && currentStatus.name ? currentStatus.name : '', branch, shift, res.checkInTime);
+
         let html =
-          '<div class="row"><span>وقت الحضور</span><b>' + res.checkInTime + '</b></div>' +
           '<div class="row"><span>الحالة</span><b>' + res.debtLabel + '</b></div>';
         if (res.debtCreated > 0) {
           html += '<div class="row"><span>دين ' + (res.debtStatus === 'معلَّق' ? 'معلَّق' : 'مؤكَّد') +
@@ -384,6 +464,9 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         if (res.status === 'يحتاج مراجعة') {
           showResult(false, res.message);
         } else {
+          const nowStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
+          showConfirmModal('انصراف', currentStatus && currentStatus.name ? currentStatus.name : '', branch, shift, nowStr);
+
           let html =
             '<div class="row"><span>ساعات العمل الفعلية</span><b>' + res.actualHours + ' ساعة</b></div>' +
             '<div class="row"><span>أوفر تايم اليوم</span><b>' + res.overtimeHoursActual + ' ساعة</b></div>';
@@ -424,6 +507,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   function logoutEmployee() {
     currentEmployeeId = null;
     currentStatus = null;
+    stopClock();
     document.getElementById('employeeName').value = '';
     document.getElementById('employeeId').value = '';
     document.getElementById('mainCard').style.display = 'none';
@@ -432,6 +516,51 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     document.getElementById('mainMenuCard').style.display = 'block';
     document.getElementById('resultBox').className = 'result-box';
     document.getElementById('resultBox').innerHTML = '';
+  }
+
+  // ---- بند 25.2: الساعة الحية ----
+  let clockTimer = null;
+  function startClock() {
+    if (clockTimer) clearInterval(clockTimer); // إلغاء أي تايمر قديم قبل بدء واحد جديد — يمنع التراكم
+    updateClock();
+    clockTimer = setInterval(updateClock, 1000);
+  }
+  function stopClock() {
+    if (clockTimer) clearInterval(clockTimer);
+    clockTimer = null;
+  }
+  function updateClock() {
+    const now = new Date();
+    const cairoTime = now.toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    document.getElementById('clockDisp').textContent = cairoTime;
+  }
+
+  // ---- بند 25.1: إيصال تأكيد بعد التسجيل ----
+  let confirmModalTimer = null;
+  function showConfirmModal(type, empName, branch, shift, timeStr) {
+    const isIn = type === 'حضور';
+    document.getElementById('confirmIcon').textContent = isIn ? '🟢' : '🔴';
+    document.getElementById('confirmTitle').textContent = 'تم التسجيل بنجاح!';
+    document.getElementById('confirmMessage').textContent = 'تم تسجيل ' + type + 'ك في النظام';
+    document.getElementById('confirmName').textContent = empName;
+    document.getElementById('confirmTime').textContent = timeStr;
+    document.getElementById('confirmBranch').textContent = branch;
+    document.getElementById('confirmShift').textContent = shift;
+    document.getElementById('confirmCode').textContent = currentEmployeeId + '-' + new Date().getTime().toString().slice(-6);
+
+    const fill = document.getElementById('timerFill');
+    fill.style.animation = 'none';
+    void fill.offsetWidth; // إعادة تشغيل الأنيميشن من الصفر لو المودال فتح أكتر من مرة
+    fill.style.animation = 'timerShrink 10s linear forwards';
+
+    document.getElementById('confirmModal').classList.add('show');
+
+    if (confirmModalTimer) clearTimeout(confirmModalTimer); // إلغاء أي إغلاق تلقائي معلَّق من مرة سابقة
+    confirmModalTimer = setTimeout(closeConfirmModal, 10000);
+  }
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+    if (confirmModalTimer) { clearTimeout(confirmModalTimer); confirmModalTimer = null; }
   }
 
   function toggleRequestPanel() {
@@ -530,6 +659,41 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
   function closeMonthlyHistory() {
     document.getElementById('historyModal').style.display = 'none';
+  }
+
+  // ---- بند 26: "طلباتي" ----
+  function openMyRequests() {
+    if (!currentEmployeeId) return alert('سجّل دخولك الأول');
+    document.getElementById('myRequestsModal').style.display = 'block';
+    document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">جاري التحميل...</div>';
+
+    apiCall('myRequests', { employeeId: currentEmployeeId })
+      .then(renderMyRequests)
+      .catch(err => document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">خطأ: ' + err.message + '</div>');
+  }
+
+  function closeMyRequests() {
+    document.getElementById('myRequestsModal').style.display = 'none';
+  }
+
+  function renderMyRequests(requests) {
+    if (!requests || requests.length === 0) {
+      document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">📭 مفيش أي طلبات سابقة</div>';
+      return;
+    }
+
+    let html = '';
+    requests.forEach(r => {
+      const statusClass = r.status === 'قيد الانتظار' ? 'pending' : (r.status === 'معتمد' || r.status === 'موافق' ? 'approved' : 'rejected');
+      const statusLabel = r.status === 'قيد الانتظار' ? '⏳ قيد الانتظار' : ((r.status === 'معتمد' || r.status === 'موافق') ? '✅ معتمد' : '❌ مرفوض');
+      html += '<div class="myreq-card">';
+      html += '<div class="myreq-top"><span class="myreq-type">' + (r.requestType === 'سلفة' ? '💰 سلفة' : '📝 إذن') +
+        '</span><span class="myreq-status ' + statusClass + '">' + statusLabel + '</span></div>';
+      html += '<div class="myreq-detail">' + r.detail + '</div>';
+      html += '<div class="myreq-date">' + r.date + '</div>';
+      html += '</div>';
+    });
+    document.getElementById('myRequestsContainer').innerHTML = html;
   }
 
   function loadHistoryData() {
