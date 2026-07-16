@@ -328,10 +328,10 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <div class="panel" id="panel-absence">
   <div class="card">
     <div class="stitle">طلبات الموظفين <button class="mini-btn" onclick="loadUnifiedRequests()">تحديث</button></div>
-    <div class="row2" style="margin-bottom:10px;">
-      <button class="btn bng" id="reqFilterAll" onclick="setReqFilter('all')">الكل</button>
-      <button class="btn bno" id="reqFilterAbsence" onclick="setReqFilter('إذن')">إذن</button>
-      <button class="btn bno" id="reqFilterAdvance" onclick="setReqFilter('سلفة')">سلفة</button>
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button class="btn bng" id="reqFilterAll" style="flex:1;" onclick="setReqFilter('all')">الكل</button>
+      <button class="btn bno" id="reqFilterAbsence" style="flex:1;" onclick="setReqFilter('إذن')">إذن</button>
+      <button class="btn bno" id="reqFilterAdvance" style="flex:1;" onclick="setReqFilter('سلفة')">سلفة</button>
     </div>
     <div id="unifiedReqList"><div class="empty">جاري التحميل...</div></div>
   </div>
