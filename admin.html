@@ -71,6 +71,20 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .att-info { flex:1; min-width:0; }
 .att-name { font-weight:900; font-size:.85rem; }
 .att-meta { font-size:.72rem; color:var(--m); margin-top:2px; }
+
+/* بند 21: بطاقات طلبات الموظفين الموحدة */
+.req-card { background:white; border-radius:14px; padding:12px 14px; margin-bottom:10px; border:1.5px solid var(--b3); }
+.req-badges { display:flex; gap:6px; margin-bottom:8px; }
+.req-badge-type { padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; background:#e3f2fd; color:#1565c0; }
+.req-badge-type.advance { background:#fff3cd; color:#856404; }
+.req-badge-status { padding:3px 10px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.req-badge-status.pending { background:#fff8e8; color:#8a5a00; }
+.req-badge-status.approved { background:var(--gl); color:var(--gd); }
+.req-badge-status.rejected { background:var(--rl); color:var(--r); }
+.req-name { font-weight:900; font-size:.88rem; margin-bottom:2px; }
+.req-meta { font-size:.72rem; color:var(--m); margin-bottom:4px; }
+.req-detail { font-size:.8rem; color:var(--t); margin-bottom:10px; }
+.req-actions { display:flex; gap:8px; }
 .bfull { width:100%; }
 .btn:active { transform:scale(.98); }
 
@@ -170,7 +184,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
   <button class="tab-btn" data-panel="review">🔎 مراجعة</button>
   <button class="tab-btn" data-panel="attlog">📋 سجل الحضور</button>
   <button class="tab-btn" data-panel="employees">👥 الموظفين</button>
-  <button class="tab-btn" data-panel="absence">📅 الغياب</button>
+  <button class="tab-btn" data-panel="absence">📅 طلبات الموظفين</button>
   <button class="tab-btn" data-panel="reports">📊 التقارير</button>
   <button class="tab-btn" data-panel="month">🔒 قفل الشهر</button>
 </div>
@@ -313,7 +327,17 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <!-- بند 12: الغياب -->
 <div class="panel" id="panel-absence">
   <div class="card">
-    <div class="stitle">تسجيل حالة غياب (بند 12)</div>
+    <div class="stitle">طلبات الموظفين <button class="mini-btn" onclick="loadUnifiedRequests()">تحديث</button></div>
+    <div class="row2" style="margin-bottom:10px;">
+      <button class="btn bng" id="reqFilterAll" onclick="setReqFilter('all')">الكل</button>
+      <button class="btn bno" id="reqFilterAbsence" onclick="setReqFilter('إذن')">إذن</button>
+      <button class="btn bno" id="reqFilterAdvance" onclick="setReqFilter('سلفة')">سلفة</button>
+    </div>
+    <div id="unifiedReqList"><div class="empty">جاري التحميل...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="stitle">تسجيل حالة غياب يدويًا (بند 12)</div>
     <div class="shint">استخدم هذه الشاشة عند تواصل الموظف معك (واتساب/مكالمة) بخصوص غيابه، أو عند تسجيل غياب بدون أي تواصل خالص.</div>
     <div class="row2">
       <div class="fg"><label>كود الموظف</label><input type="text" id="newAbsEmpId"></div>
@@ -324,20 +348,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
       <button class="btn br" onclick="submitUnauthorizedAbsence()">🚫 غياب بدون إذن مباشرة (بدون تواصل)</button>
     </div>
     <div class="msg" id="newAbsMsg"></div>
-  </div>
-
-  <div class="card">
-    <div class="stitle">الموافقة على غياب / إجازة طارئة (بند 12)</div>
-    <div class="shint">ملحوظة: البلاغ المتأخر (بعد يوم الغياب نفسه) يُصنَّف "غياب بدون إذن" تلقائيًا ولا يظهر هنا للموافقة.</div>
-    <div class="row2">
-      <div class="fg"><label>كود الموظف</label><input type="text" id="absEmpId"></div>
-      <div class="fg"><label>التاريخ (YYYY-MM-DD)</label><input type="text" id="absDate"></div>
-    </div>
-    <div class="row2">
-      <button class="btn bng" onclick="submitAbsenceDecision(true)">✅ موافقة (إجازة معتمدة)</button>
-      <button class="btn br" onclick="submitAbsenceDecision(false)">❌ رفض (غياب بدون إذن)</button>
-    </div>
-    <div class="msg" id="absMsg"></div>
   </div>
 </div>
 
@@ -399,6 +409,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
       if (tab.dataset.panel === 'home') loadDashboard();
       if (tab.dataset.panel === 'employees') loadEmployeeList();
       if (tab.dataset.panel === 'attlog') loadAttendanceLog();
+      if (tab.dataset.panel === 'absence') loadUnifiedRequests();
     });
   });
 
@@ -705,7 +716,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
     if (!empId || !date) return showMsg('newAbsMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
 
     apiCall('requestAbsence', { employeeId: empId, date })
-      .then(res => showMsg('newAbsMsg', true, 'تم تسجيل طلب الإجازة — حالته: قيد الانتظار. استخدم البطاقة اللي تحت للموافقة أو الرفض.'))
+      .then(res => { showMsg('newAbsMsg', true, 'تم تسجيل طلب الإجازة — حالته: قيد الانتظار.'); loadUnifiedRequests(); })
       .catch(err => showMsg('newAbsMsg', false, err.message));
   }
 
@@ -719,15 +730,70 @@ input:checked + .slider:before { transform:translateX(-20px); }
       .catch(err => showMsg('newAbsMsg', false, err.message));
   }
 
-  function submitAbsenceDecision(approve) {
-    const empId = document.getElementById('absEmpId').value.trim();
-    const date = document.getElementById('absDate').value.trim();
-    if (!empId || !date) return showMsg('absMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
+  // ---- بند 21: شاشة طلبات الموظفين الموحَّدة ----
+  let cachedRequests = [];
+  let reqFilterMode = 'all';
 
-    apiCall('decideAbsence', { employeeId: empId, date, approve, admin: 'الأدمن' })
-      .then(res => showMsg('absMsg', true, 'تم تسجيل القرار: ' + res.type))
-      .catch(err => showMsg('absMsg', false, err.message));
+  function loadUnifiedRequests() {
+    document.getElementById('unifiedReqList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    apiCall('unifiedRequests')
+      .then(reqs => { cachedRequests = reqs || []; renderUnifiedRequests(); })
+      .catch(err => document.getElementById('unifiedReqList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
   }
+
+  function setReqFilter(mode) {
+    reqFilterMode = mode;
+    document.getElementById('reqFilterAll').className = 'btn ' + (mode === 'all' ? 'bng' : 'bno');
+    document.getElementById('reqFilterAbsence').className = 'btn ' + (mode === 'إذن' ? 'bng' : 'bno');
+    document.getElementById('reqFilterAdvance').className = 'btn ' + (mode === 'سلفة' ? 'bng' : 'bno');
+    renderUnifiedRequests();
+  }
+
+  function renderUnifiedRequests() {
+    const filtered = reqFilterMode === 'all' ? cachedRequests : cachedRequests.filter(r => r.requestType === reqFilterMode);
+    if (filtered.length === 0) {
+      document.getElementById('unifiedReqList').innerHTML = '<div class="empty">مفيش طلبات حاليًا</div>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(r => {
+      const typeBadgeClass = r.requestType === 'سلفة' ? 'req-badge-type advance' : 'req-badge-type';
+      const statusClass = r.status === 'قيد الانتظار' ? 'pending' : (r.status === 'معتمد' ? 'approved' : 'rejected');
+      const statusLabel = r.status === 'قيد الانتظار' ? 'معلَّق' : (r.status === 'معتمد' ? 'معتمد ok' : 'مرفوض');
+
+      html += '<div class="req-card">';
+      html += '<div class="req-badges"><span class="' + typeBadgeClass + '">' + r.requestType + '</span>' +
+        '<span class="req-badge-status ' + statusClass + '">' + statusLabel + '</span></div>';
+      html += '<div class="req-name">' + r.employeeName + '</div>';
+      html += '<div class="req-meta">الكود: ' + r.employeeId + '</div>';
+      html += '<div class="req-detail">' + r.detail + '</div>';
+
+      if (r.status === 'قيد الانتظار') {
+        html += '<div class="req-actions">';
+        if (r.kind === 'absence') {
+          html += '<button class="btn br" style="flex:1;" onclick="decideUnified(\'absence\', \'' + r.employeeId + '\', \'' + r.date + '\', false)">رفض</button>';
+          html += '<button class="btn bng" style="flex:1;" onclick="decideUnified(\'absence\', \'' + r.employeeId + '\', \'' + r.date + '\', true)">موافقة</button>';
+        } else {
+          html += '<button class="btn br" style="flex:1;" onclick="decideUnified(\'advance\', \'' + r.requestId + '\', null, false)">رفض</button>';
+          html += '<button class="btn bng" style="flex:1;" onclick="decideUnified(\'advance\', \'' + r.requestId + '\', null, true)">موافقة</button>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('unifiedReqList').innerHTML = html;
+  }
+
+  function decideUnified(kind, idOrEmpId, date, approve) {
+    const call = kind === 'absence'
+      ? apiCall('decideAbsence', { employeeId: idOrEmpId, date, approve, admin: 'الأدمن' })
+      : apiCall('decideAdvance', { requestId: idOrEmpId, approve, admin: 'الأدمن' });
+
+    call.then(() => loadUnifiedRequests())
+      .catch(err => alert('خطأ: ' + err.message));
+  }
+
 
   function submitMonthlyReport() {
     const empId = document.getElementById('repEmpId').value.trim();

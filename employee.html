@@ -43,6 +43,8 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .fg input:focus,.fg select:focus { border-color:var(--g); background:white; }
 .btn { width:100%; padding:14px; border:none; border-radius:14px; font-family:"Cairo",sans-serif; font-size:.95rem; font-weight:900; cursor:pointer; transition:all .2s; }
 .bng { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; box-shadow:0 4px 12px rgba(78,144,18,.3); }
+.bno { background:white; border:2px solid var(--b3); color:var(--m); }
+.bfull { width:100%; }
 .btn:active { transform:scale(.98); }
 .btn:disabled { opacity:.6; cursor:not-allowed; }
 
@@ -141,6 +143,32 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     </div>
 
     <div class="result-box" id="resultBox"></div>
+
+    <div class="card">
+      <button class="btn bno bfull" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
+      <div id="requestPanel" style="display:none; margin-top:14px;">
+        <div class="fg">
+          <label>نوع الطلب</label>
+          <select id="reqType" onchange="switchReqType()">
+            <option value="advance">سلفة مالية</option>
+            <option value="absence">إذن / إجازة طارئة</option>
+          </select>
+        </div>
+
+        <div id="advanceFields">
+          <div class="fg"><label>المبلغ المطلوب (ج.م)</label><input type="number" id="reqAmount"></div>
+          <div class="fg"><label>السبب (اختياري)</label><input type="text" id="reqReason"></div>
+          <button class="btn bng bfull" onclick="submitAdvanceRequest()">إرسال طلب السلفة</button>
+        </div>
+
+        <div id="absenceFields" style="display:none;">
+          <div class="fg"><label>تاريخ اليوم المطلوب إجازة فيه</label><input type="date" id="reqAbsDate"></div>
+          <button class="btn bng bfull" onclick="submitAbsenceRequestEmp()">إرسال طلب الإجازة</button>
+        </div>
+
+        <div class="result-box" id="reqResultBox"></div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -302,6 +330,52 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   function showError(err) {
     document.getElementById('empName').textContent = 'حصل خطأ';
     showResult(false, err.message);
+  }
+
+  // ---- بند 21: طلب سلفة / إذن من شاشة الموظف ----
+  function toggleRequestPanel() {
+    const panel = document.getElementById('requestPanel');
+    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+  }
+
+  function switchReqType() {
+    const type = document.getElementById('reqType').value;
+    document.getElementById('advanceFields').style.display = (type === 'advance') ? 'block' : 'none';
+    document.getElementById('absenceFields').style.display = (type === 'absence') ? 'block' : 'none';
+  }
+
+  function submitAdvanceRequest() {
+    if (!currentEmployeeId) return alert('سجّل دخولك الأول');
+    const amount = Number(document.getElementById('reqAmount').value);
+    const reason = document.getElementById('reqReason').value;
+    if (!amount || amount <= 0) return showReqResult(false, 'من فضلك اكتب مبلغ صحيح');
+
+    apiCall('requestAdvance', { employeeId: currentEmployeeId, amount, reason })
+      .then(res => {
+        showReqResult(true, 'تم إرسال طلب السلفة (' + amount + ' ج.م) — بانتظار موافقة صاحب العمل.');
+        document.getElementById('reqAmount').value = '';
+        document.getElementById('reqReason').value = '';
+      })
+      .catch(err => showReqResult(false, err.message));
+  }
+
+  function submitAbsenceRequestEmp() {
+    if (!currentEmployeeId) return alert('سجّل دخولك الأول');
+    const date = document.getElementById('reqAbsDate').value;
+    if (!date) return showReqResult(false, 'من فضلك اختار التاريخ');
+
+    apiCall('requestAbsence', { employeeId: currentEmployeeId, date })
+      .then(res => {
+        showReqResult(true, 'تم إرسال طلب الإجازة ليوم ' + date + ' — بانتظار موافقة صاحب العمل.');
+        document.getElementById('reqAbsDate').value = '';
+      })
+      .catch(err => showReqResult(false, err.message));
+  }
+
+  function showReqResult(ok, html) {
+    const box = document.getElementById('reqResultBox');
+    box.className = 'result-box show ' + (ok ? 'ok' : 'err');
+    box.innerHTML = html;
   }
 </script>
 </body>
