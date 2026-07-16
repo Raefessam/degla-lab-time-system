@@ -164,6 +164,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     <div class="card" id="mainMenuCard">
       <button class="btn bno bfull" onclick="openMonthlyHistory()">📊 السجل الشهري</button>
       <button class="btn bno bfull" style="margin-top:10px;" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
+      <button class="btn bno bfull" style="margin-top:10px;" onclick="logoutEmployee()">🔙 رجوع</button>
     </div>
 
     <div class="card" id="requestPanel" style="display:none;">
@@ -183,15 +184,11 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
       <div class="req-form" id="form-leave">
         <div class="fg"><label>سبب الإذن</label><input type="text" id="leaveReason" placeholder="اكتب السبب"/></div>
-        <div class="fg">
-          <label>المدة</label>
-          <select id="leaveDur">
-            <option value="ساعة">ساعة</option>
-            <option value="ساعتين">ساعتين</option>
-            <option value="نص يوم">نص يوم</option>
-            <option value="يوم كامل">يوم كامل</option>
-          </select>
+        <div class="row2">
+          <div class="fg"><label>من الساعة</label><input type="time" id="leaveFrom" oninput="calcLeaveDuration()"/></div>
+          <div class="fg"><label>إلى الساعة</label><input type="time" id="leaveTo" oninput="calcLeaveDuration()"/></div>
         </div>
+        <div id="leaveDurDisplay" class="timing-ok" style="display:none; padding:8px 12px; font-size:.78rem;"></div>
         <div class="fg"><label>تاريخ الإذن</label><input type="date" id="leaveDate"/></div>
         <div class="fg"><label>ملاحظة (اختياري)</label><input type="text" id="leaveNote" placeholder="أي تفاصيل إضافية"/></div>
         <button class="btn bng bfull" onclick="submitAbsenceRequestEmp()">إرسال طلب الإذن</button>
@@ -278,6 +275,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
           return;
         }
         currentEmployeeId = res.code;
+        document.getElementById('loginCard').style.display = 'none';
         document.getElementById('mainCard').style.display = 'block';
         refreshStatus();
       })
@@ -422,6 +420,20 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   }
 
   // ---- بند 22: طلب سلفة / إذن (مطابق R1) + السجل الشهري ----
+  /** بند 22.3: رجوع لشاشة تحقق الهوية — يمسح بيانات الموظف الحالي عشان موظف تاني يقدر يستخدم نفس الجهاز */
+  function logoutEmployee() {
+    currentEmployeeId = null;
+    currentStatus = null;
+    document.getElementById('employeeName').value = '';
+    document.getElementById('employeeId').value = '';
+    document.getElementById('mainCard').style.display = 'none';
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('requestPanel').style.display = 'none';
+    document.getElementById('mainMenuCard').style.display = 'block';
+    document.getElementById('resultBox').className = 'result-box';
+    document.getElementById('resultBox').innerHTML = '';
+  }
+
   function toggleRequestPanel() {
     const panel = document.getElementById('requestPanel');
     const showingPanel = panel.style.display === 'none';
@@ -455,17 +467,44 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       .catch(err => showReqResult(false, err.message));
   }
 
+  /** حساب إجمالي الساعات تلقائيًا من وقت البداية والنهاية — بند 22.2 (مُحدَّث) */
+  function calcLeaveDuration() {
+    const from = document.getElementById('leaveFrom').value;
+    const to = document.getElementById('leaveTo').value;
+    const box = document.getElementById('leaveDurDisplay');
+    if (!from || !to) { box.style.display = 'none'; return ''; }
+
+    const [fh, fm] = from.split(':').map(Number);
+    const [th, tm] = to.split(':').map(Number);
+    let diffMinutes = (th * 60 + tm) - (fh * 60 + fm);
+    if (diffMinutes <= 0) {
+      box.style.display = 'block';
+      box.textContent = '⚠️ وقت النهاية لازم يكون بعد وقت البداية';
+      return '';
+    }
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    const label = (hours > 0 ? hours + ' ساعة ' : '') + (mins > 0 ? mins + ' دقيقة' : '');
+    box.style.display = 'block';
+    box.textContent = '⏱️ إجمالي المدة: ' + label.trim();
+    return from + ' - ' + to + ' (' + label.trim() + ')';
+  }
+
   function submitAbsenceRequestEmp() {
     if (!currentEmployeeId) return alert('سجّل دخولك الأول');
     const date = document.getElementById('leaveDate').value;
-    const duration = document.getElementById('leaveDur').value;
+    const duration = calcLeaveDuration();
     const note = document.getElementById('leaveNote').value;
     if (!date) return showReqResult(false, 'من فضلك اختار التاريخ');
+    if (!duration) return showReqResult(false, 'من فضلك حدد وقت البداية والنهاية بشكل صحيح');
 
     apiCall('requestAbsence', { employeeId: currentEmployeeId, date, duration, note })
       .then(res => {
         showReqResult(true, 'تم إرسال طلب الإذن (' + duration + ') ليوم ' + date + ' — بانتظار موافقة صاحب العمل.');
         document.getElementById('leaveReason').value = '';
+        document.getElementById('leaveFrom').value = '';
+        document.getElementById('leaveTo').value = '';
+        document.getElementById('leaveDurDisplay').style.display = 'none';
         document.getElementById('leaveDate').value = '';
         document.getElementById('leaveNote').value = '';
       })
