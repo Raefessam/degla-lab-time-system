@@ -45,6 +45,19 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .bng { background:linear-gradient(135deg,#6abf1e,#4e9012); color:white; box-shadow:0 4px 12px rgba(78,144,18,.3); }
 .bno { background:white; border:2px solid var(--b3); color:var(--m); }
 .bfull { width:100%; }
+
+/* بند 22.2: تابات الطلبات — مطابقة R1 */
+.req-tabs { display:flex; gap:6px; margin-bottom:14px; background:var(--b3); border-radius:12px; padding:4px; }
+.rtab { flex:1; text-align:center; padding:9px 6px; border-radius:9px; font-size:.82rem; font-weight:700; color:var(--m); cursor:pointer; transition:all .2s; }
+.rtab.on { background:var(--gd); color:white; box-shadow:0 2px 8px rgba(45,110,14,.3); }
+.req-form { display:none; }
+.req-form.on { display:block; }
+
+/* نافذة السجل الشهري */
+#historyMonth, #historyFilter { width:100%; padding:10px 12px; border:2px solid var(--b3); border-radius:10px; font-family:"Cairo",sans-serif; font-size:.85rem; outline:none; background:#fafafa; }
+.hist-row { display:flex; justify-content:space-between; align-items:center; padding:9px 6px; border-bottom:1px solid var(--b3); font-size:.78rem; }
+.hist-row:last-child { border-bottom:none; }
+.no-data { text-align:center; padding:20px; color:var(--b4); font-size:.82rem; }
 .btn:active { transform:scale(.98); }
 .btn:disabled { opacity:.6; cursor:not-allowed; }
 
@@ -144,33 +157,78 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
     <div class="result-box" id="resultBox"></div>
 
-    <div class="card">
-      <button class="btn bno bfull" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
-      <div id="requestPanel" style="display:none; margin-top:14px;">
+    <div class="card" id="mainMenuCard">
+      <button class="btn bno bfull" onclick="openMonthlyHistory()">📊 السجل الشهري</button>
+      <button class="btn bno bfull" style="margin-top:10px;" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
+    </div>
+
+    <div class="card" id="requestPanel" style="display:none;">
+      <div class="stitle">📋 الطلبات</div>
+
+      <div class="req-tabs">
+        <div class="rtab on" id="tab-salary" onclick="switchReqTab('salary')">💰 سلفة</div>
+        <div class="rtab" id="tab-leave" onclick="switchReqTab('leave')">📝 إذن غياب</div>
+      </div>
+
+      <div class="req-form on" id="form-salary">
+        <div class="fg"><label>المبلغ المطلوب (ج.م)</label><input type="number" id="salAmount" inputmode="numeric" placeholder="مثال: 500"/></div>
+        <div class="fg"><label>سبب السلفة (اختياري)</label><input type="text" id="salReason" placeholder="سبب"/></div>
+        <div class="fg"><label>تاريخ الاستلام المتوقع</label><input type="date" id="salDate"/></div>
+        <button class="btn bng bfull" onclick="submitAdvanceRequest()">إرسال طلب السلفة</button>
+      </div>
+
+      <div class="req-form" id="form-leave">
+        <div class="fg"><label>سبب الإذن</label><input type="text" id="leaveReason" placeholder="اكتب السبب"/></div>
         <div class="fg">
-          <label>نوع الطلب</label>
-          <select id="reqType" onchange="switchReqType()">
-            <option value="advance">سلفة مالية</option>
-            <option value="absence">إذن / إجازة طارئة</option>
+          <label>المدة</label>
+          <select id="leaveDur">
+            <option value="ساعة">ساعة</option>
+            <option value="ساعتين">ساعتين</option>
+            <option value="نص يوم">نص يوم</option>
+            <option value="يوم كامل">يوم كامل</option>
           </select>
         </div>
-
-        <div id="advanceFields">
-          <div class="fg"><label>المبلغ المطلوب (ج.م)</label><input type="number" id="reqAmount"></div>
-          <div class="fg"><label>السبب (اختياري)</label><input type="text" id="reqReason"></div>
-          <button class="btn bng bfull" onclick="submitAdvanceRequest()">إرسال طلب السلفة</button>
-        </div>
-
-        <div id="absenceFields" style="display:none;">
-          <div class="fg"><label>تاريخ اليوم المطلوب إجازة فيه</label><input type="date" id="reqAbsDate"></div>
-          <button class="btn bng bfull" onclick="submitAbsenceRequestEmp()">إرسال طلب الإجازة</button>
-        </div>
-
-        <div class="result-box" id="reqResultBox"></div>
+        <div class="fg"><label>تاريخ الإذن</label><input type="date" id="leaveDate"/></div>
+        <div class="fg"><label>ملاحظة (اختياري)</label><input type="text" id="leaveNote" placeholder="أي تفاصيل إضافية"/></div>
+        <button class="btn bng bfull" onclick="submitAbsenceRequestEmp()">إرسال طلب الإذن</button>
       </div>
+
+      <div class="result-box" id="reqResultBox"></div>
+      <button class="btn bno bfull" style="margin-top:10px;" onclick="toggleRequestPanel()">🔙 رجوع للحضور</button>
     </div>
   </div>
 
+</div>
+
+<!-- بند 22.1: نافذة السجل الشهري -->
+<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:9998; overflow-y:auto; padding:20px 0;">
+  <div style="background:white; border-radius:15px; max-width:480px; margin:20px auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="color:var(--gd); font-weight:900; margin:0; font-size:1rem;">📊 السجل الشهري</h2>
+      <button onclick="closeMonthlyHistory()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--m);">✕</button>
+    </div>
+
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="fg"><label>الشهر</label><input type="month" id="historyMonth" onchange="loadHistoryData()"></div>
+      <div class="fg">
+        <label>التصفية</label>
+        <select id="historyFilter" onchange="loadHistoryData()">
+          <option value="all">الكل</option>
+          <option value="checkin">التي فيها حضور</option>
+          <option value="checkout">التي فيها انصراف</option>
+          <option value="requests">التي فيها طلبات</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="historySummary" style="text-align:center; background:linear-gradient(135deg,var(--gl),var(--gp)); border:2px solid var(--g); border-radius:12px; padding:12px; margin-bottom:12px; font-weight:700; color:var(--gd); font-size:.85rem;">
+      اختر الشهر
+    </div>
+
+    <div id="historyContainer" style="max-height:360px; overflow-y:auto;"></div>
+
+    <button class="btn bng bfull" style="margin-top:12px;" onclick="closeMonthlyHistory()">إغلاق</button>
+  </div>
 </div>
 
 <div class="footer">Infinite Systems — دجله لاب</div>
@@ -332,42 +390,53 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     showResult(false, err.message);
   }
 
-  // ---- بند 21: طلب سلفة / إذن من شاشة الموظف ----
+  // ---- بند 22: طلب سلفة / إذن (مطابق R1) + السجل الشهري ----
   function toggleRequestPanel() {
     const panel = document.getElementById('requestPanel');
-    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+    const showingPanel = panel.style.display === 'none';
+    panel.style.display = showingPanel ? 'block' : 'none';
+    document.getElementById('mainMenuCard').style.display = showingPanel ? 'none' : 'block';
+    document.getElementById('checkinCard').style.display = showingPanel ? 'none' : (currentStatus && currentStatus.currentlyWorking ? 'none' : 'block');
+    document.getElementById('checkoutCard').style.display = showingPanel ? 'none' : (currentStatus && currentStatus.currentlyWorking ? 'block' : 'none');
   }
 
-  function switchReqType() {
-    const type = document.getElementById('reqType').value;
-    document.getElementById('advanceFields').style.display = (type === 'advance') ? 'block' : 'none';
-    document.getElementById('absenceFields').style.display = (type === 'absence') ? 'block' : 'none';
+  function switchReqTab(tab) {
+    document.getElementById('tab-salary').classList.toggle('on', tab === 'salary');
+    document.getElementById('tab-leave').classList.toggle('on', tab === 'leave');
+    document.getElementById('form-salary').classList.toggle('on', tab === 'salary');
+    document.getElementById('form-leave').classList.toggle('on', tab === 'leave');
   }
 
   function submitAdvanceRequest() {
     if (!currentEmployeeId) return alert('سجّل دخولك الأول');
-    const amount = Number(document.getElementById('reqAmount').value);
-    const reason = document.getElementById('reqReason').value;
+    const amount = Number(document.getElementById('salAmount').value);
+    const reason = document.getElementById('salReason').value;
+    const expectedDate = document.getElementById('salDate').value;
     if (!amount || amount <= 0) return showReqResult(false, 'من فضلك اكتب مبلغ صحيح');
 
-    apiCall('requestAdvance', { employeeId: currentEmployeeId, amount, reason })
+    apiCall('requestAdvance', { employeeId: currentEmployeeId, amount, reason, expectedDate })
       .then(res => {
         showReqResult(true, 'تم إرسال طلب السلفة (' + amount + ' ج.م) — بانتظار موافقة صاحب العمل.');
-        document.getElementById('reqAmount').value = '';
-        document.getElementById('reqReason').value = '';
+        document.getElementById('salAmount').value = '';
+        document.getElementById('salReason').value = '';
+        document.getElementById('salDate').value = '';
       })
       .catch(err => showReqResult(false, err.message));
   }
 
   function submitAbsenceRequestEmp() {
     if (!currentEmployeeId) return alert('سجّل دخولك الأول');
-    const date = document.getElementById('reqAbsDate').value;
+    const date = document.getElementById('leaveDate').value;
+    const duration = document.getElementById('leaveDur').value;
+    const note = document.getElementById('leaveNote').value;
     if (!date) return showReqResult(false, 'من فضلك اختار التاريخ');
 
-    apiCall('requestAbsence', { employeeId: currentEmployeeId, date })
+    apiCall('requestAbsence', { employeeId: currentEmployeeId, date, duration, note })
       .then(res => {
-        showReqResult(true, 'تم إرسال طلب الإجازة ليوم ' + date + ' — بانتظار موافقة صاحب العمل.');
-        document.getElementById('reqAbsDate').value = '';
+        showReqResult(true, 'تم إرسال طلب الإذن (' + duration + ') ليوم ' + date + ' — بانتظار موافقة صاحب العمل.');
+        document.getElementById('leaveReason').value = '';
+        document.getElementById('leaveDate').value = '';
+        document.getElementById('leaveNote').value = '';
       })
       .catch(err => showReqResult(false, err.message));
   }
@@ -376,6 +445,65 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     const box = document.getElementById('reqResultBox');
     box.className = 'result-box show ' + (ok ? 'ok' : 'err');
     box.innerHTML = html;
+  }
+
+  // ---- بند 22.1: السجل الشهري ----
+  function openMonthlyHistory() {
+    if (!currentEmployeeId) return alert('سجّل دخولك الأول');
+    document.getElementById('historyModal').style.display = 'block';
+    const today = new Date();
+    const ym = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    document.getElementById('historyMonth').value = ym;
+    document.getElementById('historyFilter').value = 'all';
+    loadHistoryData();
+  }
+
+  function closeMonthlyHistory() {
+    document.getElementById('historyModal').style.display = 'none';
+  }
+
+  function loadHistoryData() {
+    const yearMonth = document.getElementById('historyMonth').value;
+    if (!yearMonth) return;
+    document.getElementById('historySummary').innerHTML = '⏳ جاري التحميل...';
+    document.getElementById('historyContainer').innerHTML = '';
+
+    apiCall('employeeHistory', { employeeId: currentEmployeeId, yearMonth })
+      .then(data => renderHistoryTable(data))
+      .catch(err => {
+        document.getElementById('historySummary').innerHTML = '❌ فشل التحميل';
+        document.getElementById('historyContainer').innerHTML = '<div class="no-data">' + err.message + '</div>';
+      });
+  }
+
+  function renderHistoryTable(data) {
+    const filter = document.getElementById('historyFilter').value;
+    let attendance = data.attendance || [];
+    const requests = data.requests || [];
+
+    if (filter === 'checkin') attendance = attendance.filter(a => a.checkIn);
+    else if (filter === 'checkout') attendance = attendance.filter(a => a.checkOut);
+    else if (filter === 'requests') attendance = attendance.filter(a => requests.some(r => r.date === a.date));
+
+    document.getElementById('historySummary').innerHTML =
+      '📅 ' + data.summary.totalDays + ' يوم حضور — ⏱️ ' + data.summary.totalHours + ' ساعة — 📋 ' + data.summary.totalRequests + ' طلب';
+
+    if (attendance.length === 0 && requests.length === 0) {
+      document.getElementById('historyContainer').innerHTML = '<div class="no-data">📭 لا توجد بيانات لهذا الشهر</div>';
+      return;
+    }
+
+    let html = '';
+    attendance.forEach(a => {
+      html += '<div class="hist-row"><span>' + a.date + ' — ' + a.branch + ' / ' + a.shift + '</span>' +
+        '<span>' + (a.checkIn || '—') + ' → ' + (a.checkOut || '—') + '</span></div>';
+    });
+    if (filter === 'all' || filter === 'requests') {
+      requests.forEach(r => {
+        html += '<div class="hist-row"><span>📋 ' + r.type + ' — ' + r.date + '</span><span>' + r.detail + '</span></div>';
+      });
+    }
+    document.getElementById('historyContainer').innerHTML = html || '<div class="no-data">لا توجد نتائج مطابقة للفلتر</div>';
   }
 </script>
 </body>
