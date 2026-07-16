@@ -93,6 +93,33 @@ input:checked + .slider:before { transform:translateX(-20px); }
 .rp-net-val { font-size:1.35rem; font-weight:900; color:var(--gd); margin-top:4px; }
 
 .empty { text-align:center; padding:26px; color:var(--b4); font-size:.82rem; }
+
+/* بند 18: شاشة الرئيسية (Home Dashboard) */
+.dash-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:14px; }
+.dash-card { border-radius:14px; padding:14px 10px; text-align:center; border:1.5px solid var(--b3); background:white; }
+.dash-card.safe { background:linear-gradient(135deg,var(--gp),var(--gl)); border-color:var(--g); }
+.dash-card.danger { background:linear-gradient(135deg,#fdecea,#fbdcd8); border-color:var(--r); }
+.dash-card.neutral { background:white; }
+.dash-card.debt { background:linear-gradient(135deg,#fff8e8,#fdefd0); border-color:#B9770E; }
+.dash-card.review { background:linear-gradient(135deg,#fdecea,#fbdcd8); border-color:var(--r); }
+.dash-num { font-size:1.6rem; font-weight:900; color:var(--t); margin-bottom:4px; }
+.dash-card.safe .dash-num { color:var(--gd); }
+.dash-card.danger .dash-num, .dash-card.review .dash-num { color:var(--r); }
+.dash-card.debt .dash-num { color:#B9770E; }
+.dash-lbl { font-size:.68rem; color:var(--m); font-weight:700; line-height:1.4; }
+
+.alert-bar { margin-bottom:14px; }
+.alert-item { padding:10px 14px; border-radius:11px; font-size:.8rem; font-weight:700; margin-bottom:8px; }
+.alert-item.debt { background:#fff8e8; color:#8a5a00; border:1.5px solid #B9770E; }
+.alert-item.month-end { background:#fff3cd; color:#856404; border:1.5px solid #e6b800; }
+.alert-item.absence { background:#e3f2fd; color:#1565c0; border:1.5px solid #64b5f6; }
+
+.branch-block { margin-bottom:14px; }
+.branch-block:last-child { margin-bottom:0; }
+.branch-name { font-weight:900; font-size:.85rem; color:var(--gd); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.branch-name .cnt { background:var(--gl); color:var(--gd); border-radius:20px; padding:2px 9px; font-size:.7rem; }
+.emp-chip { display:inline-flex; align-items:center; gap:6px; background:var(--gp); border:1px solid var(--b3); border-radius:20px; padding:5px 12px; font-size:.75rem; margin:0 4px 6px 0; }
+.emp-chip .shift-tag { color:var(--m); font-size:.68rem; }
 .footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:18px; }
 </style>
 </head>
@@ -104,15 +131,49 @@ input:checked + .slider:before { transform:translateX(-20px); }
 </div>
 
 <div class="tab-bar">
-  <button class="tab-btn act" data-panel="review">🔎 مراجعة</button>
+  <button class="tab-btn act" data-panel="home">🏠 الرئيسية</button>
+  <button class="tab-btn" data-panel="review">🔎 مراجعة</button>
   <button class="tab-btn" data-panel="employees">👥 الموظفين</button>
   <button class="tab-btn" data-panel="absence">📅 الغياب</button>
   <button class="tab-btn" data-panel="reports">📊 التقارير</button>
   <button class="tab-btn" data-panel="month">🔒 قفل الشهر</button>
 </div>
 
+<!-- بند 18: شاشة الرئيسية (Home Dashboard) -->
+<div class="panel active" id="panel-home">
+  <div class="dash-cards">
+    <div class="dash-card safe">
+      <div class="dash-num" id="dashWorking">-</div>
+      <div class="dash-lbl">🟢 داخل الدوام الآن</div>
+    </div>
+    <div class="dash-card danger">
+      <div class="dash-num" id="dashCheckedOut">-</div>
+      <div class="dash-lbl">🔴 انصرف اليوم</div>
+    </div>
+    <div class="dash-card neutral">
+      <div class="dash-num" id="dashTotal">-</div>
+      <div class="dash-lbl">📊 إجمالي حضور اليوم</div>
+    </div>
+    <div class="dash-card debt">
+      <div class="dash-num" id="dashDebt">-</div>
+      <div class="dash-lbl">⏱️ إجمالي الدين المستحق (ساعة)</div>
+    </div>
+    <div class="dash-card review">
+      <div class="dash-num" id="dashReview">-</div>
+      <div class="dash-lbl">⚠️ حالات تحتاج مراجعة</div>
+    </div>
+  </div>
+
+  <div id="alertBar"></div>
+
+  <div class="card">
+    <div class="stitle">الفروع الآن <button class="mini-btn" onclick="loadDashboard()">تحديث</button></div>
+    <div id="branchStatus"><div class="empty">جاري التحميل...</div></div>
+  </div>
+</div>
+
 <!-- بند 10 و7.3: يحتاج مراجعة -->
-<div class="panel active" id="panel-review">
+<div class="panel" id="panel-review">
   <div class="card">
     <div class="stitle">الأيام المفتوحة / التي تحتاج مراجعة</div>
     <div id="reviewList"><div class="empty">جاري التحميل...</div></div>
@@ -254,8 +315,53 @@ input:checked + .slider:before { transform:translateX(-20px); }
       tab.classList.add('act');
       document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
       if (tab.dataset.panel === 'review') loadReviewList();
+      if (tab.dataset.panel === 'home') loadDashboard();
     });
   });
+
+  /** بند 18: تحميل وعرض شاشة الرئيسية (كروت + تنبيهات + حالة الفروع) */
+  function loadDashboard() {
+    document.getElementById('branchStatus').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    apiCall('dashboardSummary')
+      .then(renderDashboard)
+      .catch(err => document.getElementById('branchStatus').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+  }
+
+  function renderDashboard(data) {
+    document.getElementById('dashWorking').textContent = data.cards.currentlyWorking;
+    document.getElementById('dashCheckedOut').textContent = data.cards.checkedOutToday;
+    document.getElementById('dashTotal').textContent = data.cards.totalAttendanceToday;
+    document.getElementById('dashDebt').textContent = data.cards.totalDebtHours;
+    document.getElementById('dashReview').textContent = data.cards.needsReviewCount;
+
+    const alertBar = document.getElementById('alertBar');
+    if (!data.alerts || data.alerts.length === 0) {
+      alertBar.innerHTML = '';
+    } else {
+      let html = '<div class="alert-bar">';
+      data.alerts.forEach(a => {
+        html += '<div class="alert-item ' + a.type + '">' + a.message + '</div>';
+      });
+      html += '</div>';
+      alertBar.innerHTML = html;
+    }
+
+    const branchBox = document.getElementById('branchStatus');
+    if (!data.branches || data.branches.length === 0) {
+      branchBox.innerHTML = '<div class="empty">مفيش أي موظف شغال دلوقتي ✅</div>';
+    } else {
+      let html = '';
+      data.branches.forEach(b => {
+        html += '<div class="branch-block"><div class="branch-name">📍 ' + b.branch +
+          ' <span class="cnt">' + b.employees.length + '</span></div>';
+        b.employees.forEach(e => {
+          html += '<span class="emp-chip">' + e.name + ' <span class="shift-tag">— ' + e.shift + '</span></span>';
+        });
+        html += '</div>';
+      });
+      branchBox.innerHTML = html;
+    }
+  }
 
   function loadReviewList() {
     document.getElementById('reviewList').innerHTML = '<div class="empty">جاري التحميل...</div>';
@@ -423,7 +529,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
     el.textContent = text;
   }
 
-  loadReviewList();
+  loadDashboard();
 </script>
 </body>
 </html>
