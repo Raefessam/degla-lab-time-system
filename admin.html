@@ -215,9 +215,14 @@ input:checked + .slider:before { transform:translateX(-20px); }
   <div class="card">
     <div class="stitle">إضافة موظف جديد</div>
     <div class="shint">كود الموظف يُولَّد تلقائيًا (E001، E002...) — بند 13.1. الفرع/الشيفت يختارهما الموظف بنفسه عند كل حضور.</div>
+    <div class="fg"><label>الاسم الثلاثي</label><input type="text" id="newName"></div>
     <div class="row2">
-      <div class="fg"><label>الاسم</label><input type="text" id="newName"></div>
-      <div class="fg"><label>المرتب اليومي</label><input type="number" id="newSalary"></div>
+      <div class="fg"><label>رقم البطاقة</label><input type="text" id="newNationalId"></div>
+      <div class="fg"><label>المرتب اليومي (ج.م)</label><input type="number" id="newSalary"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>موبايل</label><input type="text" id="newPhone" placeholder="01xxxxxxxxx"></div>
+      <div class="fg"><label>تاريخ التعيين</label><input type="date" id="newHireDate"></div>
     </div>
     <button class="btn bng bfull" onclick="submitAddEmployee()">إضافة الموظف ➕</button>
     <div class="msg" id="addEmpMsg"></div>
@@ -236,11 +241,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
     <div class="stitle">تعديل موظف (بند 8.0، 8.1، 8.2) — <span id="editEmpNameLbl"></span></div>
     <input type="hidden" id="editEmpId">
 
+    <div class="fg"><label>الاسم</label><input type="text" id="editName"></div>
     <div class="row2">
-      <div class="fg"><label>الاسم</label><input type="text" id="editName"></div>
+      <div class="fg"><label>رقم البطاقة</label><input type="text" id="editNationalId"></div>
       <div class="fg"><label>المرتب اليومي</label><input type="number" id="editSalary"></div>
     </div>
-    <button class="btn bng bfull" onclick="submitUpdateInfo()">حفظ الاسم والمرتب</button>
+    <div class="row2">
+      <div class="fg"><label>موبايل</label><input type="text" id="editPhone"></div>
+      <div class="fg"><label>تاريخ التعيين</label><input type="date" id="editHireDate"></div>
+    </div>
+    <button class="btn bng bfull" onclick="submitUpdateInfo()">حفظ البيانات</button>
 
     <div class="toggle-row" style="margin-top:14px;">
       <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
@@ -451,14 +461,20 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const data = {
       name: document.getElementById('newName').value,
       dailySalary: Number(document.getElementById('newSalary').value),
+      nationalId: document.getElementById('newNationalId').value,
+      phone: document.getElementById('newPhone').value,
+      hireDate: document.getElementById('newHireDate').value,
     };
-    if (!data.name || !data.dailySalary) return showMsg('addEmpMsg', false, 'من فضلك اكمل كل الحقول');
+    if (!data.name || !data.dailySalary) return showMsg('addEmpMsg', false, 'من فضلك اكمل الاسم والمرتب على الأقل');
 
     apiCall('addEmployee', data)
       .then(res => {
         showMsg('addEmpMsg', true, 'تمت إضافة الموظف بكود: ' + res.employeeId);
         document.getElementById('newName').value = '';
         document.getElementById('newSalary').value = '';
+        document.getElementById('newNationalId').value = '';
+        document.getElementById('newPhone').value = '';
+        document.getElementById('newHireDate').value = '';
         loadEmployeeList();
       })
       .catch(err => showMsg('addEmpMsg', false, err.message));
@@ -512,6 +528,8 @@ input:checked + .slider:before { transform:translateX(-20px); }
       '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
     h += '<div class="ec-body">';
     h += '<div><div class="ec-stat-lbl">المرتب اليومي</div><div class="ec-stat-val">' + Number(e.DailySalary).toLocaleString() + ' ج.م</div></div>';
+    h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.Phone || '—') + '</div></div>';
+    h += '<div><div class="ec-stat-lbl">رقم البطاقة</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.NationalId || '—') + '</div></div>';
     h += '<div><div class="ec-stat-lbl">نافذة مخصصة (بند 8.2)</div><div class="ec-stat-val">' + windowInfo + '</div></div>';
     h += '</div><div class="ec-actions">';
     h += '<button class="ec-edit" onclick="openEditEmployee(\'' + e.EmployeeID + '\')">✏️ تعديل</button>';
@@ -533,6 +551,9 @@ input:checked + .slider:before { transform:translateX(-20px); }
     document.getElementById('editEmpNameLbl').textContent = emp.Name + ' (' + id + ')';
     document.getElementById('editName').value = emp.Name;
     document.getElementById('editSalary').value = emp.DailySalary;
+    document.getElementById('editNationalId').value = emp.NationalId || '';
+    document.getElementById('editPhone').value = emp.Phone || '';
+    document.getElementById('editHireDate').value = emp.HireDate || '';
     document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
     document.getElementById('windowStart').value = emp.CustomWindowStart || '';
     document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
@@ -549,10 +570,13 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const id = document.getElementById('editEmpId').value;
     const name = document.getElementById('editName').value;
     const dailySalary = Number(document.getElementById('editSalary').value);
+    const nationalId = document.getElementById('editNationalId').value;
+    const phone = document.getElementById('editPhone').value;
+    const hireDate = document.getElementById('editHireDate').value;
     if (!name || !dailySalary) return showMsg('editEmpMsg', false, 'من فضلك اكمل الاسم والمرتب');
 
-    apiCall('updateEmployeeInfo', { employeeId: id, name, dailySalary })
-      .then(() => { showMsg('editEmpMsg', true, 'تم تحديث الاسم والمرتب'); loadEmployeeList(); })
+    apiCall('updateEmployeeInfo', { employeeId: id, name, dailySalary, nationalId, phone, hireDate })
+      .then(() => { showMsg('editEmpMsg', true, 'تم تحديث بيانات الموظف'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
