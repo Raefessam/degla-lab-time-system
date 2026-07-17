@@ -5,8 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="دجله لاب إدارة"/>
+<meta name="application-name" content="دجله لاب إدارة"/>
 <title>Degla Smart Lab - إدارة (نظام الوقت الجديد)</title>
 <meta name="theme-color" content="#4e9012"/>
+<!-- بند 30.2: أيقونات PWA — تظهر عند حفظ الرابط على الشاشة الرئيسية لأي جهاز -->
+<link rel="manifest" href="manifest-admin.json"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════════════════════
@@ -85,6 +94,24 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .req-meta { font-size:.72rem; color:var(--m); margin-bottom:4px; }
 .req-detail { font-size:.8rem; color:var(--t); margin-bottom:10px; }
 .req-actions { display:flex; gap:8px; }
+
+/* بند 30.1: شاشة التحميل (Splash Screen) — مطابقة لـ R1 */
+#splash {
+    position:fixed; inset:0;
+    background:linear-gradient(160deg,#edfad4,#c8f0a0,#edfad4);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:99999; padding:24px;
+}
+#splash .logo-wrap { width:min(220px,60vw); height:min(220px,60vw); display:flex; align-items:center; justify-content:center; }
+#splash .logo-wrap img { width:100%; height:100%; object-fit:contain; animation:splashPulse 1.8s infinite; border-radius:24px; box-shadow:0 8px 30px rgba(78,144,18,.25); }
+@keyframes splashPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+#splash .sp-title { color:var(--gd); font-size:1.1rem; font-weight:900; margin-top:18px; }
+#splash .sp-sub { color:var(--gd); font-size:.75rem; font-weight:700; margin-top:6px; opacity:.7; letter-spacing:1px; }
+.spdots { display:flex; gap:10px; margin-top:26px; }
+.spdot { width:8px; height:8px; border-radius:50%; background:var(--g); animation:spDotPulse 1.2s infinite; }
+.spdot:nth-child(2){animation-delay:.25s}
+.spdot:nth-child(3){animation-delay:.5s}
+@keyframes spDotPulse { 0%,100%{opacity:.3;} 50%{opacity:1;} }
 
 /* بند 23: تقرير المرتب المفصَّل */
 .rep-section-title { font-weight:900; font-size:.85rem; color:var(--gd); margin:16px 0 8px; }
@@ -195,6 +222,14 @@ input:checked + .slider:before { transform:translateX(-20px); }
 </style>
 </head>
 <body>
+
+<!-- بند 30.1: شاشة التحميل — تختفي تلقائيًا بعد 2.2 ثانية -->
+<div id="splash">
+  <div class="logo-wrap"><img src="logo.png" alt="Degla Smart Lab"/></div>
+  <div class="sp-title">Degla Smart Lab</div>
+  <div class="sp-sub">لوحة تحكم صاحب العمل — النسخة الجديدة</div>
+  <div class="spdots"><div class="spdot"></div><div class="spdot"></div><div class="spdot"></div></div>
+</div>
 
 <div class="hdr">
   <h1>🏢 دجله لاب — لوحة صاحب العمل</h1>
@@ -407,6 +442,15 @@ input:checked + .slider:before { transform:translateX(-20px); }
 <div class="footer">Infinite Systems — دجله لاب</div>
 
 <script>
+  // بند 30.1: إخفاء شاشة التحميل تلقائيًا بعد 2.2 ثانية بتأثير تلاشي سلس
+  setTimeout(function () {
+    const splash = document.getElementById('splash');
+    if (!splash) return;
+    splash.style.transition = 'opacity .5s';
+    splash.style.opacity = '0';
+    setTimeout(function () { splash.style.display = 'none'; }, 550);
+  }, 2200);
+
   // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
 

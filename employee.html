@@ -5,8 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="دجله لاب حضور"/>
+<meta name="application-name" content="دجله لاب حضور"/>
 <title>Degla Smart Lab - حضور (نظام الوقت الجديد)</title>
 <meta name="theme-color" content="#4e9012"/>
+<!-- بند 30.2: أيقونات PWA — تظهر عند حفظ الرابط على الشاشة الرئيسية لأي جهاز -->
+<link rel="manifest" href="manifest-employee.json"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════════════════════
@@ -56,6 +65,15 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 /* نافذة السجل الشهري */
 #historyMonth, #historyFilter { width:100%; padding:10px 12px; border:2px solid var(--b3); border-radius:10px; font-family:"Cairo",sans-serif; font-size:.85rem; outline:none; background:#fafafa; }
 .hist-row { display:flex; justify-content:space-between; align-items:center; padding:9px 6px; border-bottom:1px solid var(--b3); font-size:.78rem; }
+
+/* بند 29: جدول السجل الشهري المُحسَّن — مطابق R1 */
+.att-table { width:100%; border-collapse:collapse; font-size:.72rem; }
+.att-table th { background:var(--gl); color:var(--gd); padding:8px 6px; text-align:center; position:sticky; top:0; }
+.att-table td { padding:7px 6px; text-align:center; border-bottom:1px solid var(--b3); }
+.time-in { color:var(--gd); font-weight:700; }
+.time-out { color:var(--r); font-weight:700; }
+.hours-worked { background:var(--gl); color:var(--gd); border-radius:12px; padding:3px 8px; font-weight:700; white-space:nowrap; }
+.att-total-row { display:flex; justify-content:space-between; align-items:center; background:var(--gl); border:2px solid var(--g); border-radius:10px; padding:10px 14px; margin-top:10px; font-weight:900; color:var(--gd); font-size:.85rem; position:sticky; bottom:0; }
 .hist-row:last-child { border-bottom:none; }
 .no-data { text-align:center; padding:20px; color:var(--b4); font-size:.82rem; }
 
@@ -78,6 +96,13 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
 /* بند 5: حالات المؤشر — timing-ok (آمن) / timing-pending (معلّق، جديد) / timing-late (مؤكّد) */
 .timing-ok { background:#e3f2fd; color:#1565c0; border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
+
+/* بند 28: شريط التنبيه اللحظي عند اختيار الفرع/الشيفت (مطابق R1) */
+.timing-badge { padding:10px; border-radius:10px; text-align:center; font-weight:700; margin-bottom:12px; font-size:.82rem; border:2px solid; }
+.timing-badge.before { background:#e3f2fd; color:#1565c0; border-color:#1565c0; }
+.timing-badge.ontime { background:#e8f5e9; color:#2e7d32; border-color:#2e7d32; }
+.timing-badge.late { background:#ffebee; color:#c62828; border-color:#c62828; }
+.timing-badge.ended { background:#fff3e0; color:#e65100; border-color:#e65100; }
 .timing-pending { background:var(--yl); color:var(--y); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; border:1.5px dashed var(--y); }
 .timing-late { background:var(--rl); color:var(--r); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
 .timing-suspended { background:#f5f5f5; color:var(--m); border-radius:12px; padding:12px 14px; font-size:.85rem; font-weight:700; margin-bottom:12px; text-align:center; }
@@ -109,6 +134,24 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
 .footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:16px; }
 
+/* بند 30.1: شاشة التحميل (Splash Screen) — مطابقة لـ R1 */
+#splash {
+    position:fixed; inset:0;
+    background:linear-gradient(160deg,#edfad4,#c8f0a0,#edfad4);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:99999; padding:24px;
+}
+#splash .logo-wrap { width:min(220px,60vw); height:min(220px,60vw); display:flex; align-items:center; justify-content:center; }
+#splash .logo-wrap img { width:100%; height:100%; object-fit:contain; animation:splashPulse 1.8s infinite; border-radius:24px; box-shadow:0 8px 30px rgba(78,144,18,.25); }
+@keyframes splashPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+#splash .sp-title { color:var(--gd); font-size:1.1rem; font-weight:900; margin-top:18px; }
+#splash .sp-sub { color:var(--gd); font-size:.75rem; font-weight:700; margin-top:6px; opacity:.7; letter-spacing:1px; }
+.spdots { display:flex; gap:10px; margin-top:26px; }
+.spdot { width:8px; height:8px; border-radius:50%; background:var(--g); animation:spDotPulse 1.2s infinite; }
+.spdot:nth-child(2){animation-delay:.25s}
+.spdot:nth-child(3){animation-delay:.5s}
+@keyframes spDotPulse { 0%,100%{opacity:.3;} 50%{opacity:1;} }
+
 /* بند 25.2: الساعة الحية */
 .clock { text-align:center; font-size:1.6rem; font-weight:900; color:var(--gd); font-family:monospace; letter-spacing:2px; margin-bottom:12px; }
 
@@ -135,6 +178,14 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 </style>
 </head>
 <body>
+
+<!-- بند 30.1: شاشة التحميل — تختفي تلقائيًا بعد 2.2 ثانية -->
+<div id="splash">
+  <div class="logo-wrap"><img src="logo.png" alt="Degla Smart Lab"/></div>
+  <div class="sp-title">Degla Smart Lab</div>
+  <div class="sp-sub">نظام الحضور والانصراف — النسخة الجديدة</div>
+  <div class="spdots"><div class="spdot"></div><div class="spdot"></div><div class="spdot"></div></div>
+</div>
 
 <div class="hdr">
   <h1>🏢 دجله لاب</h1>
@@ -172,7 +223,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       <div class="stitle">تسجيل حضور</div>
       <div class="fg">
         <label>الفرع</label>
-        <select id="branch">
+        <select id="branch" onchange="updateTimingBadge()">
           <option value="زهراء المعادي">زهراء المعادي</option>
           <option value="كوتسيكا">كوتسيكا</option>
           <option value="كورنيش طرة">كورنيش طرة</option>
@@ -180,11 +231,12 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       </div>
       <div class="fg">
         <label>الشيفت</label>
-        <select id="shift">
+        <select id="shift" onchange="updateTimingBadge()">
           <option value="شيفت 1">شيفت 1</option>
           <option value="شيفت 2">شيفت 2</option>
         </select>
       </div>
+      <div id="timingBadge"></div>
       <div class="att-btns">
         <button class="att-in" id="checkinBtn" onclick="doCheckIn()">✅ تسجيل حضور</button>
       </div>
@@ -265,6 +317,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     </div>
 
     <div id="historyContainer" style="max-height:360px; overflow-y:auto;"></div>
+    <div class="att-total-row" id="historyTotalRow" style="position:static;"></div>
 
     <button class="btn bng bfull" style="margin-top:12px;" onclick="closeMonthlyHistory()">إغلاق</button>
   </div>
@@ -312,6 +365,15 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 <div class="footer">Infinite Systems — دجله لاب</div>
 
 <script>
+  // بند 30.1: إخفاء شاشة التحميل تلقائيًا بعد 2.2 ثانية بتأثير تلاشي سلس
+  setTimeout(function () {
+    const splash = document.getElementById('splash');
+    if (!splash) return;
+    splash.style.transition = 'opacity .5s';
+    splash.style.opacity = '0';
+    setTimeout(function () { splash.style.display = 'none'; }, 550);
+  }, 2200);
+
   // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
 
@@ -415,6 +477,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       workingBox.innerHTML = '';
       document.getElementById('checkinCard').style.display = 'block';
       document.getElementById('checkoutCard').style.display = 'none';
+      updateTimingBadge(); // بند 28: عرض فوري بدون انتظار تحديث الساعة القادم
     }
   }
 
@@ -533,6 +596,51 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     const now = new Date();
     const cairoTime = now.toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', second: '2-digit' });
     document.getElementById('clockDisp').textContent = cairoTime;
+    updateTimingBadge(); // بند 28: تحديث شريط التنبيه كل ثانية مع الساعة
+  }
+
+  // ---- بند 28: شريط التنبيه اللحظي (تأخير/تقدُّم/في الموعد) — مطابق R1 ----
+  // مواعيد الشيفتات نفسها المستخدمة في الخادم (بند 2) — للعرض الإرشادي فقط، الحساب الفعلي دائمًا من الخادم
+  const SHIFT_TIMES_CLIENT = {
+    'زهراء المعادي': { 'شيفت 1': { s: '10:00', h: 6 }, 'شيفت 2': { s: '16:00', h: 7 } },
+    'كوتسيكا':       { 'شيفت 1': { s: '09:00', h: 7 }, 'شيفت 2': { s: '16:00', h: 7 } },
+    'كورنيش طرة':    { 'شيفت 1': { s: '10:00', h: 6 }, 'شيفت 2': { s: '16:00', h: 6 } },
+  };
+
+  function toMins_(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function updateTimingBadge() {
+    const badge = document.getElementById('timingBadge');
+    if (!badge) return; // مش موجودة (مثلًا الموظف شغال دلوقتي ومفيش فورم حضور ظاهر)
+
+    const branchEl = document.getElementById('branch');
+    const shiftEl = document.getElementById('shift');
+    if (!branchEl || !shiftEl) { badge.innerHTML = ''; return; }
+
+    const cfg = SHIFT_TIMES_CLIENT[branchEl.value] && SHIFT_TIMES_CLIENT[branchEl.value][shiftEl.value];
+    if (!cfg) { badge.innerHTML = ''; return; }
+
+    const nowStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
+    const curMins = toMins_(nowStr);
+    const shiftStart = toMins_(cfg.s);
+    const shiftEnd = shiftStart + cfg.h * 60;
+
+    let html = '';
+    if (curMins < shiftStart) {
+      const diff = shiftStart - curMins;
+      const h = Math.floor(diff / 60), m = diff % 60;
+      html = '<div class="timing-badge before">⏰ الشيفت يبدأ خلال ' + h + 'س ' + m + 'د</div>';
+    } else if (curMins < shiftEnd) {
+      const late = curMins - shiftStart;
+      if (late > 1) html = '<div class="timing-badge late">⚠️ تأخير ' + late + ' دقيقة</div>';
+      else html = '<div class="timing-badge ontime">✅ في الموعد</div>';
+    } else {
+      html = '<div class="timing-badge ended">⏰ انتهى الشيفت</div>';
+    }
+    badge.innerHTML = html;
   }
 
   // ---- بند 25.1: إيصال تأكيد بعد التسجيل ----
@@ -727,17 +835,29 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       return;
     }
 
-    let html = '';
+    // بند 29: جدول كامل (التاريخ، الدخول، الخروج، ساعات العمل، ملاحظات) + صف إجمالي ثابت
+    let filteredTotal = 0;
+    let html = '<table class="att-table"><thead><tr><th>التاريخ</th><th>الدخول</th><th>الخروج</th><th>ساعات العمل</th><th>ملاحظات</th></tr></thead><tbody>';
     attendance.forEach(a => {
-      html += '<div class="hist-row"><span>' + a.date + ' — ' + a.branch + ' / ' + a.shift + '</span>' +
-        '<span>' + (a.checkIn || '—') + ' → ' + (a.checkOut || '—') + '</span></div>';
+      filteredTotal += a.hoursWorked || 0;
+      const checkinCell = a.checkIn ? '<span class="time-in">✅ ' + a.checkIn + '</span>' : '<span class="time-in">—</span>';
+      const checkoutCell = a.checkOut ? '<span class="time-out">🔴 ' + a.checkOut + '</span>' : '<span class="time-out">—</span>';
+      const hoursCell = a.hoursWorked > 0 ? '<span class="hours-worked">' + a.hoursWorked.toFixed(2) + ' ساعة</span>' : '—';
+      html += '<tr><td>' + a.date + '</td><td>' + checkinCell + '</td><td>' + checkoutCell + '</td><td>' + hoursCell + '</td><td>' + (a.notes || '—') + '</td></tr>';
     });
+    html += '</tbody></table>';
+
     if (filter === 'all' || filter === 'requests') {
       requests.forEach(r => {
         html += '<div class="hist-row"><span>📋 ' + r.type + ' — ' + r.date + '</span><span>' + r.detail + '</span></div>';
       });
     }
-    document.getElementById('historyContainer').innerHTML = html || '<div class="no-data">لا توجد نتائج مطابقة للفلتر</div>';
+
+    document.getElementById('historyContainer').innerHTML = html;
+
+    // صف الإجمالي — ثابت أسفل النافذة دائمًا بغض النظر عن التمرير (بند 29)
+    document.getElementById('historyTotalRow').innerHTML =
+      '<span>الإجمالي</span><span>' + filteredTotal.toFixed(2) + ' ساعة</span>';
   }
 </script>
 </body>
