@@ -83,6 +83,17 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 
 /* بند 35.1: الشريط الاحترافي — حالة الخصم لكل حدث في سجل الحضور */
 .debt-strip { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; padding:8px 10px; border-radius:10px; font-size:.75rem; border:1.5px solid; }
+
+/* بند 36: كارت اليوم — يجمع كل شيفتات الموظف في نفس اليوم */
+.day-card { background:white; border-radius:14px; border:1.5px solid var(--b3); margin-bottom:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.day-header { background:var(--gl); color:var(--gd); font-weight:900; font-size:.85rem; padding:10px 14px; }
+.shift-block { padding:12px 14px; border-top:1px solid var(--b3); }
+.shift-label { font-weight:800; font-size:.78rem; color:var(--t); margin-bottom:6px; }
+.shift-times { display:flex; align-items:center; gap:8px; font-size:.78rem; flex-wrap:wrap; }
+.st-in { color:var(--gd); font-weight:700; }
+.st-out { color:var(--r); font-weight:700; }
+.st-open { color:#B9770E; font-weight:700; }
+.st-arrow { color:var(--b4); }
 .debt-strip.active { background:#fff8e8; border-color:#B9770E; color:#8a5a00; }
 .debt-strip.cancelled { background:#f5f5f5; border-color:var(--b3); color:var(--m); text-decoration:line-through; }
 .debt-strip.cancelled b { text-decoration:none; }
@@ -601,31 +612,59 @@ input:checked + .slider:before { transform:translateX(-20px); }
       return;
     }
 
-    let html = '';
-    filtered.forEach(e => {
-      const isIn = e.type === 'حضور';
-      html += '<div class="att-item">';
-      html += '<div class="att-icon ' + (isIn ? 'in' : 'out') + '">' + (isIn ? '▲' : '▼') + '</div>';
-      html += '<div class="att-info">';
-      html += '<span class="att-badge ' + (isIn ? 'in' : 'out') + '">' + e.type + '</span> <span class="att-time">' + e.time + ' — ' + e.date + '</span>';
-      html += '<div class="att-name">' + e.employeeName + '</div>';
-      html += '<div class="att-meta">فرع ' + e.branch + ' / ' + e.shift + ' — ' + e.note + '</div>';
+    // بند 36: تجميع حسب (التاريخ + الموظف) — كارت واحد لليوم يحتوي كل شيفتاته (واحد أو أكتر)
+    const dayGroups = {};
+    const dayOrder = [];
 
-      // بند 35.1: الشريط الاحترافي — يظهر فقط للأحداث اللي أنشأت دينًا فعليًا
-      if (e.hasDebt) {
-        const statusClass = e.debtCancelled ? 'cancelled' : 'active';
-        const statusLabel = e.debtCancelled ? '❌ ملغى' : '✅ فعّال';
-        html += '<div class="debt-strip ' + statusClass + '">';
-        html += '<span>⏱️ دين ' + e.debtHours + ' ساعة — <b>' + statusLabel + '</b></span>';
-        if (e.debtCancelled) {
-          html += '<button class="btn-mini reenable" onclick="reenableDeduction(\'' + e.recordId + '\')">إعادة تفعيل</button>';
-        } else {
-          html += '<button class="btn-mini cancel" onclick="cancelDeduction(\'' + e.recordId + '\')">إلغاء الخصم</button>';
+    filtered.forEach(e => {
+      const dayKey = e.date + '|' + e.employeeId;
+      if (!dayGroups[dayKey]) {
+        dayGroups[dayKey] = { date: e.date, employeeName: e.employeeName, employeeId: e.employeeId, shifts: {}, shiftOrder: [] };
+        dayOrder.push(dayKey);
+      }
+      const group = dayGroups[dayKey];
+      if (!group.shifts[e.recordId]) {
+        group.shifts[e.recordId] = { recordId: e.recordId, branch: e.branch, shift: e.shift, checkin: null, checkout: null };
+        group.shiftOrder.push(e.recordId);
+      }
+      if (e.type === 'حضور') group.shifts[e.recordId].checkin = e;
+      else group.shifts[e.recordId].checkout = e;
+    });
+
+    let html = '';
+    dayOrder.forEach(dayKey => {
+      const group = dayGroups[dayKey];
+      html += '<div class="day-card">';
+      html += '<div class="day-header">📅 ' + group.date + ' — ' + group.employeeName + '</div>';
+
+      group.shiftOrder.forEach(recordId => {
+        const s = group.shifts[recordId];
+        html += '<div class="shift-block">';
+        html += '<div class="shift-label">' + s.shift + ' / ' + s.branch + '</div>';
+        html += '<div class="shift-times">';
+        html += s.checkin ? '<span class="st-in">✅ ' + s.checkin.time + ' — ' + s.checkin.note + '</span>' : '<span class="st-in">—</span>';
+        html += '<span class="st-arrow">←</span>';
+        html += s.checkout ? '<span class="st-out">🔴 ' + s.checkout.time + ' — ' + s.checkout.note + '</span>' : '<span class="st-open">⏳ لسه مفتوح</span>';
+        html += '</div>';
+
+        // بند 35.1: الشريط الاحترافي — يظهر مرة واحدة بس لكل شيفت (من أي حدث فيه hasDebt=true)
+        const debtEvent = (s.checkout && s.checkout.hasDebt) ? s.checkout : ((s.checkin && s.checkin.hasDebt) ? s.checkin : null);
+        if (debtEvent) {
+          const statusClass = debtEvent.debtCancelled ? 'cancelled' : 'active';
+          const statusLabel = debtEvent.debtCancelled ? '❌ ملغى' : '✅ فعّال';
+          html += '<div class="debt-strip ' + statusClass + '">';
+          html += '<span>⏱️ دين ' + debtEvent.debtHours + ' ساعة — <b>' + statusLabel + '</b></span>';
+          if (debtEvent.debtCancelled) {
+            html += '<button class="btn-mini reenable" onclick="reenableDeduction(\'' + recordId + '\')">إعادة تفعيل</button>';
+          } else {
+            html += '<button class="btn-mini cancel" onclick="cancelDeduction(\'' + recordId + '\')">إلغاء الخصم</button>';
+          }
+          html += '</div>';
         }
         html += '</div>';
-      }
+      });
 
-      html += '</div></div>';
+      html += '</div>';
     });
     document.getElementById('attLogList').innerHTML = html;
   }
