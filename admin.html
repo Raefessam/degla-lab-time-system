@@ -374,6 +374,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
     <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
 
     <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <span style="font-size:.82rem;">تفعيل النافذة المخصصة (بند 33.1)</span>
+      <label class="switch">
+        <input type="checkbox" id="windowEnabledToggle" onchange="submitWindowEnabledToggle()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="fg-hint">إيقافه بيرجّع الموظف لمواعيد الشيفت العادية، من غير ما يمسح الأوقات المحفوظة</div>
+
     <div class="msg" id="editEmpMsg"></div>
 
     <button class="btn br bfull" id="deleteEmpBtn" style="display:none; margin-top:14px;" onclick="submitDeleteEmployee()">🗑️ حذف نهائي</button>
@@ -686,8 +696,9 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const statusPill = isActive
       ? '<button class="status-pill" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'غير نشط\')">🟢 نشط</button>'
       : '<button class="status-pill inactive" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'نشط\')">⚪ غير نشط</button>';
+    const windowEnabled = (e.CustomWindowEnabled === true || e.CustomWindowEnabled === 'TRUE');
     const windowInfo = (e.CustomWindowStart && e.CustomWindowEnd)
-      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd
+      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd + (windowEnabled ? ' ✅' : ' (متوقفة⏸️)')
       : '—';
 
     let h = '<div class="emp-card"' + (isActive ? '' : ' style="opacity:.8; border-style:dashed;"') + '><div class="ec-head">';
@@ -726,6 +737,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
     document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
     document.getElementById('windowStart').value = emp.CustomWindowStart || '';
     document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+    document.getElementById('windowEnabledToggle').checked = (emp.CustomWindowEnabled === true || emp.CustomWindowEnabled === 'TRUE');
 
     // بند 8.0: زرار الحذف النهائي يظهر فقط للموظف "غير نشط"
     const isInactive = (emp.Status === 'غير نشط');
@@ -773,7 +785,19 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const start = document.getElementById('windowStart').value;
     const end = document.getElementById('windowEnd').value;
     apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value, start, end })
-      .then(() => { showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'); loadEmployeeList(); })
+      .then(() => {
+        showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة');
+        document.getElementById('windowEnabledToggle').checked = !!(start && end); // بند 33.1: تفعيل تلقائي عند الحفظ
+        loadEmployeeList();
+      })
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  /** بند 33.1: تفعيل/إيقاف النافذة المخصصة بدون مسح الأوقات المحفوظة */
+  function submitWindowEnabledToggle() {
+    const enabled = document.getElementById('windowEnabledToggle').checked;
+    apiCall('setCustomWindowEnabled', { employeeId: document.getElementById('editEmpId').value, enabled })
+      .then(() => { showMsg('editEmpMsg', true, enabled ? 'تم تفعيل النافذة المخصصة' : 'تم إيقاف النافذة المخصصة (الأوقات لسه محفوظة)'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
