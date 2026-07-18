@@ -81,6 +81,15 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .att-name { font-weight:900; font-size:.85rem; }
 .att-meta { font-size:.72rem; color:var(--m); margin-top:2px; }
 
+/* بند 35.1: الشريط الاحترافي — حالة الخصم لكل حدث في سجل الحضور */
+.debt-strip { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; padding:8px 10px; border-radius:10px; font-size:.75rem; border:1.5px solid; }
+.debt-strip.active { background:#fff8e8; border-color:#B9770E; color:#8a5a00; }
+.debt-strip.cancelled { background:#f5f5f5; border-color:var(--b3); color:var(--m); text-decoration:line-through; }
+.debt-strip.cancelled b { text-decoration:none; }
+.btn-mini { border:none; border-radius:8px; padding:5px 10px; font-family:"Cairo",sans-serif; font-size:.68rem; font-weight:700; cursor:pointer; text-decoration:none; }
+.btn-mini.cancel { background:var(--r); color:white; }
+.btn-mini.reenable { background:var(--gd); color:white; }
+
 /* بند 21: بطاقات طلبات الموظفين الموحدة */
 .req-card { background:white; border-radius:14px; padding:12px 14px; margin-bottom:10px; border:1.5px solid var(--b3); }
 .req-badges { display:flex; gap:6px; margin-bottom:8px; }
@@ -387,14 +396,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
     </div>
     <button class="btn bng bfull" onclick="submitUpdateInfo()">حفظ البيانات</button>
 
-    <div class="toggle-row" style="margin-top:14px;">
-      <span style="font-size:.82rem;">تعليق الخصومات (بند 8.1)</span>
-      <label class="switch">
-        <input type="checkbox" id="suspendToggle" onchange="submitSuspendToggle()">
-        <span class="slider"></span>
-      </label>
-    </div>
-
     <div class="fg" style="margin-top:12px;"><label>نافذة الحضور — من (بند 8.2)</label><input type="text" id="windowStart" placeholder="18:00"></div>
     <div class="fg-hint">إلزامي بنظام 24 ساعة — اكتب "18:00" مش "6"</div>
     <div class="fg"><label>نافذة الحضور — إلى</label><input type="text" id="windowEnd" placeholder="23:00"></div>
@@ -609,9 +610,39 @@ input:checked + .slider:before { transform:translateX(-20px); }
       html += '<span class="att-badge ' + (isIn ? 'in' : 'out') + '">' + e.type + '</span> <span class="att-time">' + e.time + ' — ' + e.date + '</span>';
       html += '<div class="att-name">' + e.employeeName + '</div>';
       html += '<div class="att-meta">فرع ' + e.branch + ' / ' + e.shift + ' — ' + e.note + '</div>';
+
+      // بند 35.1: الشريط الاحترافي — يظهر فقط للأحداث اللي أنشأت دينًا فعليًا
+      if (e.hasDebt) {
+        const statusClass = e.debtCancelled ? 'cancelled' : 'active';
+        const statusLabel = e.debtCancelled ? '❌ ملغى' : '✅ فعّال';
+        html += '<div class="debt-strip ' + statusClass + '">';
+        html += '<span>⏱️ دين ' + e.debtHours + ' ساعة — <b>' + statusLabel + '</b></span>';
+        if (e.debtCancelled) {
+          html += '<button class="btn-mini reenable" onclick="reenableDeduction(\'' + e.recordId + '\')">إعادة تفعيل</button>';
+        } else {
+          html += '<button class="btn-mini cancel" onclick="cancelDeduction(\'' + e.recordId + '\')">إلغاء الخصم</button>';
+        }
+        html += '</div>';
+      }
+
       html += '</div></div>';
     });
     document.getElementById('attLogList').innerHTML = html;
+  }
+
+  /** بند 35.2: إلغاء/إعادة تفعيل الخصم لشيفت معيّن من سجل الحضور مباشرة */
+  function cancelDeduction(recordId) {
+    if (!confirm('متأكد إنك عايز تلغي الخصم ده؟ ده هيتسجل في السجل باسمك.')) return;
+    apiCall('cancelDeductionForShift', { recordId, admin: 'الأدمن' })
+      .then(() => loadAttendanceLog())
+      .catch(err => alert('خطأ: ' + err.message));
+  }
+
+  function reenableDeduction(recordId) {
+    if (!confirm('متأكد إنك عايز ترجّع الخصم ده تاني؟')) return;
+    apiCall('reenableDeductionForShift', { recordId, admin: 'الأدمن' })
+      .then(() => loadAttendanceLog())
+      .catch(err => alert('خطأ: ' + err.message));
   }
 
   function loadReviewList() {
@@ -719,7 +750,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
   function buildEmployeeCard(e) {
     const isActive = (e.Status !== 'غير نشط'); // بند 8.0: حالة نشط/غير نشط — مطابقة لـ R1
-    const suspended = (e.DeductionSuspended === true || e.DeductionSuspended === 'TRUE'); // بند 8.1: تعليق الخصومات (مفهوم مختلف)
     const statusPill = isActive
       ? '<button class="status-pill" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'غير نشط\')">🟢 نشط</button>'
       : '<button class="status-pill inactive" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'نشط\')">⚪ غير نشط</button>';
@@ -731,8 +761,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
     let h = '<div class="emp-card"' + (isActive ? '' : ' style="opacity:.8; border-style:dashed;"') + '><div class="ec-head">';
     h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">' + statusPill +
       '<div class="ec-av"' + (isActive ? '' : ' style="background:#f5f5f5; color:var(--m);"') + '>' + (e.Name ? e.Name.charAt(0) : '؟') + '</div></div>';
-    h += '<div class="ec-info"><div class="ec-name">' + e.Name + (suspended ? ' <span class="status-pill suspended" style="cursor:default;">🔓 معلَّق من الخصومات</span>' : '') +
-      '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
+    h += '<div class="ec-info"><div class="ec-name">' + e.Name + '</div><div class="ec-meta">' + e.EmployeeID + '</div></div></div>';
     h += '<div class="ec-body">';
     h += '<div><div class="ec-stat-lbl">المرتب اليومي</div><div class="ec-stat-val">' + Number(e.DailySalary).toLocaleString() + ' ج.م</div></div>';
     h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.Phone || '—') + '</div></div>';
@@ -825,7 +854,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
     document.getElementById('editNationalId').value = emp.NationalId || '';
     document.getElementById('editPhone').value = emp.Phone || '';
     document.getElementById('editHireDate').value = emp.HireDate || '';
-    document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
     document.getElementById('windowStart').value = emp.CustomWindowStart || '';
     document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
     document.getElementById('windowEnabledToggle').checked = (emp.CustomWindowEnabled === true || emp.CustomWindowEnabled === 'TRUE');
@@ -856,13 +884,6 @@ input:checked + .slider:before { transform:translateX(-20px); }
   function submitDeleteEmployee() {
     const id = document.getElementById('editEmpId').value;
     askPin(id, 'delete');
-  }
-
-  function submitSuspendToggle() {
-    const checked = document.getElementById('suspendToggle').checked;
-    apiCall('setDeductionSuspension', { employeeId: document.getElementById('editEmpId').value, suspended: checked })
-      .then(() => { showMsg('editEmpMsg', true, checked ? 'تم تفعيل الإعفاء من الخصومات' : 'تم إلغاء الإعفاء'); loadEmployeeList(); })
-      .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
   function submitCustomWindow() {
