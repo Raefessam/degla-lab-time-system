@@ -95,6 +95,18 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .req-detail { font-size:.8rem; color:var(--t); margin-bottom:10px; }
 .req-actions { display:flex; gap:8px; }
 
+/* بند 34: صندوق تأكيد PIN — مطابق R1 */
+.pmodal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9999; align-items:center; justify-content:center; }
+.pmodal.show { display:flex; }
+.pbox { background:white; border-radius:20px; padding:28px 24px; text-align:center; max-width:90vw; width:320px; box-shadow:0 15px 50px rgba(0,0,0,.3); }
+.ptitle { font-size:1.1rem; font-weight:900; color:var(--t); margin-bottom:6px; }
+.psub { font-size:.8rem; color:var(--m); margin-bottom:16px; }
+.pinput { width:100%; padding:14px; border:2px solid var(--b3); border-radius:12px; font-family:"Cairo",sans-serif; font-size:1.4rem; text-align:center; letter-spacing:8px; outline:none; }
+.pinput:focus { border-color:var(--g); }
+.perr { display:none; color:var(--r); font-size:.75rem; font-weight:700; margin-top:8px; }
+.pbtns { display:flex; gap:8px; margin-top:16px; }
+.pbtns .btn { flex:1; }
+
 /* بند 30.1: شاشة التحميل (Splash Screen) — مطابقة لـ R1 */
 #splash {
     position:fixed; inset:0;
@@ -229,6 +241,21 @@ input:checked + .slider:before { transform:translateX(-20px); }
   <div class="sp-title">Degla Smart Lab</div>
   <div class="sp-sub">لوحة تحكم صاحب العمل — النسخة الجديدة</div>
   <div class="spdots"><div class="spdot"></div><div class="spdot"></div><div class="spdot"></div></div>
+</div>
+
+<!-- بند 34: صندوق تأكيد PIN لتعطيل/حذف الموظف — مطابق R1 -->
+<div class="pmodal" id="pinModal">
+  <div class="pbox">
+    <div style="font-size:2rem; margin-bottom:8px;">⛔</div>
+    <div class="ptitle" id="pinTitle">تأكيد الإيقاف</div>
+    <div class="psub" id="pinSub">أدخل PIN الإدارة لإيقاف الموظف</div>
+    <input type="password" class="pinput" id="pinInput" maxlength="6" inputmode="numeric" placeholder="••••"/>
+    <div class="perr" id="pinErr">PIN غير صحيح</div>
+    <div class="pbtns">
+      <button class="btn bno" onclick="closePinModal()">إلغاء</button>
+      <button class="btn br" id="pinConfirmBtn" onclick="confirmPinAction()">تأكيد</button>
+    </div>
+  </div>
 </div>
 
 <div class="hdr">
@@ -374,6 +401,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
     <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
 
     <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <span style="font-size:.82rem;">تفعيل النافذة المخصصة (بند 33.1)</span>
+      <label class="switch">
+        <input type="checkbox" id="windowEnabledToggle" onchange="submitWindowEnabledToggle()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="fg-hint">إيقافه بيرجّع الموظف لمواعيد الشيفت العادية، من غير ما يمسح الأوقات المحفوظة</div>
+
     <div class="msg" id="editEmpMsg"></div>
 
     <button class="btn br bfull" id="deleteEmpBtn" style="display:none; margin-top:14px;" onclick="submitDeleteEmployee()">🗑️ حذف نهائي</button>
@@ -686,8 +723,9 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const statusPill = isActive
       ? '<button class="status-pill" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'غير نشط\')">🟢 نشط</button>'
       : '<button class="status-pill inactive" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'نشط\')">⚪ غير نشط</button>';
+    const windowEnabled = (e.CustomWindowEnabled === true || e.CustomWindowEnabled === 'TRUE');
     const windowInfo = (e.CustomWindowStart && e.CustomWindowEnd)
-      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd
+      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd + (windowEnabled ? ' ✅' : ' (متوقفة⏸️)')
       : '—';
 
     let h = '<div class="emp-card"' + (isActive ? '' : ' style="opacity:.8; border-style:dashed;"') + '><div class="ec-head">';
@@ -707,10 +745,74 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
   /** بند 8.0: تبديل حالة نشط/غير نشط مباشرة من شارة البطاقة — بدون فتح فورم التعديل */
+  /** بند 34: تعطيل الموظف (نشط→غير نشط) يتطلب PIN؛ إعادة التفعيل (غير نشط→نشط) فورية بدون PIN */
   function toggleStatus(id, newStatus) {
-    apiCall('toggleEmployeeStatus', { employeeId: id, status: newStatus })
-      .then(() => loadEmployeeList())
-      .catch(err => alert('خطأ: ' + err.message));
+    if (newStatus === 'غير نشط') {
+      askPin(id, 'deactivate');
+    } else {
+      apiCall('toggleEmployeeStatus', { employeeId: id, status: newStatus })
+        .then(() => loadEmployeeList())
+        .catch(err => alert('خطأ: ' + err.message));
+    }
+  }
+
+  // ---- بند 34: صندوق تأكيد PIN (مطابق R1) ----
+  const ADMIN_PIN = '1122';
+  let pendingPinId = null, pendingPinAction = null;
+
+  function askPin(id, action) {
+    pendingPinId = id;
+    pendingPinAction = action;
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinErr').style.display = 'none';
+    if (action === 'delete') {
+      document.getElementById('pinTitle').textContent = 'تأكيد الحذف النهائي';
+      document.getElementById('pinSub').textContent = 'أدخل PIN الإدارة للحذف النهائي للموظف';
+      document.getElementById('pinConfirmBtn').textContent = 'تأكيد الحذف';
+    } else {
+      document.getElementById('pinTitle').textContent = 'تأكيد الإيقاف';
+      document.getElementById('pinSub').textContent = 'أدخل PIN الإدارة لإيقاف الموظف';
+      document.getElementById('pinConfirmBtn').textContent = 'تأكيد الإيقاف';
+    }
+    document.getElementById('pinModal').classList.add('show');
+    setTimeout(() => document.getElementById('pinInput').focus(), 150);
+  }
+
+  function closePinModal() {
+    document.getElementById('pinModal').classList.remove('show');
+    pendingPinId = null;
+    pendingPinAction = null;
+  }
+
+  function confirmPinAction() {
+    const entered = document.getElementById('pinInput').value.trim();
+    if (entered !== ADMIN_PIN) {
+      document.getElementById('pinErr').style.display = 'block';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinInput').focus();
+      return;
+    }
+    if (!pendingPinId) return;
+
+    const id = pendingPinId, action = pendingPinAction;
+    const btn = document.getElementById('pinConfirmBtn');
+    btn.disabled = true; btn.textContent = 'جاري...';
+
+    const call = action === 'delete'
+      ? apiCall('deleteEmployeePermanently', { employeeId: id })
+      : apiCall('toggleEmployeeStatus', { employeeId: id, status: 'غير نشط' });
+
+    call.then(() => {
+        btn.disabled = false;
+        closePinModal();
+        loadEmployeeList();
+        document.getElementById('editEmpCard').style.display = 'none';
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'تأكيد';
+        alert('خطأ: ' + err.message);
+      });
   }
 
   function openEditEmployee(id) {
@@ -726,6 +828,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
     document.getElementById('suspendToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
     document.getElementById('windowStart').value = emp.CustomWindowStart || '';
     document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
+    document.getElementById('windowEnabledToggle').checked = (emp.CustomWindowEnabled === true || emp.CustomWindowEnabled === 'TRUE');
 
     // بند 8.0: زرار الحذف النهائي يظهر فقط للموظف "غير نشط"
     const isInactive = (emp.Status === 'غير نشط');
@@ -749,17 +852,10 @@ input:checked + .slider:before { transform:translateX(-20px); }
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
+  /** بند 34: الحذف النهائي بيمر عبر صندوق PIN بدل confirm() العادي */
   function submitDeleteEmployee() {
     const id = document.getElementById('editEmpId').value;
-    if (!confirm('متأكد إنك عايز تحذف الموظف ده نهائيًا؟ الإجراء ده مايتراجعش عنه.')) return;
-
-    apiCall('deleteEmployeePermanently', { employeeId: id })
-      .then(() => {
-        showMsg('editEmpMsg', true, 'تم الحذف النهائي');
-        document.getElementById('editEmpCard').style.display = 'none';
-        loadEmployeeList();
-      })
-      .catch(err => showMsg('editEmpMsg', false, err.message));
+    askPin(id, 'delete');
   }
 
   function submitSuspendToggle() {
@@ -773,7 +869,19 @@ input:checked + .slider:before { transform:translateX(-20px); }
     const start = document.getElementById('windowStart').value;
     const end = document.getElementById('windowEnd').value;
     apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value, start, end })
-      .then(() => { showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة'); loadEmployeeList(); })
+      .then(() => {
+        showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة');
+        document.getElementById('windowEnabledToggle').checked = !!(start && end); // بند 33.1: تفعيل تلقائي عند الحفظ
+        loadEmployeeList();
+      })
+      .catch(err => showMsg('editEmpMsg', false, err.message));
+  }
+
+  /** بند 33.1: تفعيل/إيقاف النافذة المخصصة بدون مسح الأوقات المحفوظة */
+  function submitWindowEnabledToggle() {
+    const enabled = document.getElementById('windowEnabledToggle').checked;
+    apiCall('setCustomWindowEnabled', { employeeId: document.getElementById('editEmpId').value, enabled })
+      .then(() => { showMsg('editEmpMsg', true, enabled ? 'تم تفعيل النافذة المخصصة' : 'تم إيقاف النافذة المخصصة (الأوقات لسه محفوظة)'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
