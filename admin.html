@@ -90,10 +90,16 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 .shift-block { padding:12px 14px; border-top:1px solid var(--b3); }
 .shift-label { font-weight:800; font-size:.78rem; color:var(--t); margin-bottom:6px; }
 .shift-times { display:flex; align-items:center; gap:8px; font-size:.78rem; flex-wrap:wrap; }
-.st-in { color:var(--gd); font-weight:700; }
-.st-out { color:var(--r); font-weight:700; }
-.st-open { color:#B9770E; font-weight:700; }
 .st-arrow { color:var(--b4); }
+
+/* بند 37: ألوان حسب الحالة الفعلية (تأخير/أوفر تايم/في الموعد/لسه مفتوح) — موحَّدة في كل التطبيق */
+.note-late { color:#c62828; font-weight:800; }        /* تأخر */
+.note-ontime { color:#2e7d32; font-weight:800; }       /* في الموعد */
+.note-early-arrival { color:#1565c0; font-weight:800; } /* تقدَّم (حضر بدري) */
+.note-overtime { color:#6a1b9a; font-weight:800; }     /* أوفر تايم */
+.note-early-departure { color:#e65100; font-weight:800; } /* انصراف مبكر */
+.note-open { color:#B9770E; font-weight:800; }         /* لسه مفتوح */
+.note-neutral { color:var(--t); font-weight:700; }     /* حالة عامة غير مصنَّفة */
 .debt-strip.active { background:#fff8e8; border-color:#B9770E; color:#8a5a00; }
 .debt-strip.cancelled { background:#f5f5f5; border-color:var(--b3); color:var(--m); text-decoration:line-through; }
 .debt-strip.cancelled b { text-decoration:none; }
@@ -593,6 +599,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
     renderAttendanceLog();
   }
 
+  /** بند 37: تصنيف الحالة النصية للون مناسب — موحَّد في كل مكان بيعرض ملاحظة حضور/انصراف */
+  function getNoteClass(note) {
+    if (note.indexOf('تأخر') !== -1) return 'note-late';
+    if (note.indexOf('انصراف مبكر') !== -1) return 'note-early-departure';
+    if (note.indexOf('أوفر تايم') !== -1) return 'note-overtime';
+    if (note.indexOf('تقدَّم') !== -1) return 'note-early-arrival';
+    if (note.indexOf('الموعد') !== -1) return 'note-ontime';
+    return 'note-neutral';
+  }
+
   function renderAttendanceLog() {
     const todayStr = new Date().toLocaleDateString('en-CA'); // yyyy-MM-dd بتوقيت الجهاز المحلي (نفس أسلوب R1)
     const query = (document.getElementById('attSearch').value || '').toLowerCase();
@@ -642,9 +658,9 @@ input:checked + .slider:before { transform:translateX(-20px); }
         html += '<div class="shift-block">';
         html += '<div class="shift-label">' + s.shift + ' / ' + s.branch + '</div>';
         html += '<div class="shift-times">';
-        html += s.checkin ? '<span class="st-in">✅ ' + s.checkin.time + ' — ' + s.checkin.note + '</span>' : '<span class="st-in">—</span>';
+        html += s.checkin ? '<span class="' + getNoteClass(s.checkin.note) + '">✅ ' + s.checkin.time + ' — ' + s.checkin.note + '</span>' : '<span class="note-neutral">—</span>';
         html += '<span class="st-arrow">←</span>';
-        html += s.checkout ? '<span class="st-out">🔴 ' + s.checkout.time + ' — ' + s.checkout.note + '</span>' : '<span class="st-open">⏳ لسه مفتوح</span>';
+        html += s.checkout ? '<span class="' + getNoteClass(s.checkout.note) + '">🔴 ' + s.checkout.time + ' — ' + s.checkout.note + '</span>' : '<span class="note-open">⏳ لسه مفتوح</span>';
         html += '</div>';
 
         // بند 35.1: الشريط الاحترافي — يظهر مرة واحدة بس لكل شيفت (من أي حدث فيه hasDebt=true)
