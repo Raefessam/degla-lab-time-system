@@ -172,6 +172,42 @@ body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
 
 .rep-adv-row { display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px dashed var(--b3); font-size:.78rem; }
 .rep-adv-row:last-child { border-bottom:none; }
+
+/* بند 23 (مُحدَّث): شريط بحث موحّد للتقرير + اقتراحات + سنة/شهر */
+.rep-select {
+  padding:11px 12px; border:1.5px solid var(--b3); border-radius:11px;
+  background:white; font-family:"Cairo",sans-serif; font-size:.82rem; color:var(--t);
+  font-weight:700; cursor:pointer;
+}
+.rep-select:focus { outline:none; border-color:var(--g); }
+
+.rep-suggestions {
+  background:white; border:1.5px solid var(--b3); border-radius:11px;
+  margin-top:4px; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.06);
+}
+.rep-sug-row {
+  padding:9px 12px; cursor:pointer; font-size:.78rem;
+  border-bottom:1px solid var(--b3); display:flex; justify-content:space-between; gap:10px;
+}
+.rep-sug-row:last-child { border-bottom:none; }
+.rep-sug-row:hover { background:var(--gl); }
+.rep-sug-code { color:var(--m); font-weight:700; font-size:.72rem; }
+.rep-sug-name { color:var(--t); font-weight:800; }
+
+/* بند 23 (مُحدَّث): توضيح تفصيلي تحت كل بند في كشف المرتب */
+.rep-detail-list {
+  padding:6px 14px 10px; background:#fbfcfa; font-size:.72rem;
+  color:var(--m); border-bottom:1px solid var(--b3);
+}
+.rep-detail-row {
+  padding:3px 0; display:flex; justify-content:space-between; gap:8px;
+}
+.rep-detail-row::before {
+  content:"•"; margin-left:6px; color:var(--gd);
+}
+.rep-detail-lhs { flex:1; font-weight:600; }
+.rep-detail-rhs { font-weight:800; color:var(--t); white-space:nowrap; }
+
 .bfull { width:100%; }
 .btn:active { transform:scale(.98); }
 
@@ -469,12 +505,17 @@ input:checked + .slider:before { transform:translateX(-20px); }
   <div class="card">
     <div class="stitle">تقرير المرتب الشهري المفصَّل (بند 23)</div>
     <div class="row2">
-      <div class="fg"><label>كود الموظف</label><input type="text" id="repEmpId"></div>
       <div class="fg">
-        <label>الشهر</label>
+        <label>الموظف (بحث بالكود أو الاسم)</label>
+        <input type="text" id="repEmpSearch" placeholder="اكتب E001 أو اسم الموظف..." autocomplete="off" oninput="onReportEmpSearchInput()" onblur="setTimeout(hideReportEmpSuggestions, 200)">
+        <input type="hidden" id="repEmpId">
+        <div id="repEmpSuggestions" class="rep-suggestions" style="display:none;"></div>
+      </div>
+      <div class="fg">
+        <label>الفترة</label>
         <div class="row2">
-          <input type="number" id="repYear" placeholder="سنة">
-          <input type="number" id="repMonth" placeholder="شهر">
+          <select id="repYear" class="rep-select"></select>
+          <select id="repMonth" class="rep-select"></select>
         </div>
       </div>
     </div>
@@ -532,6 +573,11 @@ input:checked + .slider:before { transform:translateX(-20px); }
       if (tab.dataset.panel === 'employees') loadEmployeeList();
       if (tab.dataset.panel === 'attlog') loadAttendanceLog();
       if (tab.dataset.panel === 'absence') loadUnifiedRequests();
+      if (tab.dataset.panel === 'reports') {
+        // بند 23 مُحدَّث: نجهز اختيارات السنة/الشهر ونحمّل الموظفين لشريط البحث الموحّد
+        initReportPickers();
+        if (!cachedEmployees || cachedEmployees.length === 0) loadEmployeeList();
+      }
     });
   });
 
@@ -1046,11 +1092,94 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
 
+  // ==========================================================================
+  // بند 23 (مُحدَّث): تهيئة اختيارات السنة/الشهر + شريط البحث الموحّد
+  // ==========================================================================
+
+  /** تُنفَّذ مرة عند التبديل لتاب التقارير — تعبّي السنين والشهور بالافتراضي على الحالي */
+  function initReportPickers() {
+    const yearSel = document.getElementById('repYear');
+    const monthSel = document.getElementById('repMonth');
+    if (yearSel.options.length > 0) return; // اتعمّرت من قبل
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    // السنين: من سنتين قبل السنة الحالية لغاية السنة الحالية (زيادة كافية للرجوع)
+    for (let y = currentYear; y >= currentYear - 2; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      if (y === currentYear) opt.selected = true;
+      yearSel.appendChild(opt);
+    }
+
+    const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m + ' — ' + monthNames[m - 1];
+      if (m === currentMonth) opt.selected = true;
+      monthSel.appendChild(opt);
+    }
+  }
+
+  /** شريط البحث الموحّد: يظهر اقتراحات (كود + اسم) لأي موظف يطابق النص */
+  function onReportEmpSearchInput() {
+    const q = document.getElementById('repEmpSearch').value.trim().toLowerCase();
+    document.getElementById('repEmpId').value = ''; // نمسح الاختيار المسبق لغاية ما نلاقي واحد جديد
+
+    if (!q || !cachedEmployees || cachedEmployees.length === 0) {
+      hideReportEmpSuggestions();
+      return;
+    }
+
+    const matches = cachedEmployees
+      .filter(e => e.Status !== 'غير نشط') // النشطين بس في البحث
+      .filter(e => e.Name.toLowerCase().includes(q) || String(e.EmployeeID).toLowerCase().includes(q))
+      .slice(0, 8); // نعرض 8 أول اقتراحات لتفادي القائمة الطويلة
+
+    const box = document.getElementById('repEmpSuggestions');
+    if (matches.length === 0) {
+      box.innerHTML = '<div class="rep-sug-row" style="justify-content:center; color:var(--m);">مفيش موظف مطابق</div>';
+      box.style.display = 'block';
+      return;
+    }
+
+    box.innerHTML = matches.map(e =>
+      '<div class="rep-sug-row" onmousedown="pickReportEmp(\'' + e.EmployeeID + '\', \'' + e.Name.replace(/'/g, "\\'") + '\')">' +
+        '<span class="rep-sug-name">' + e.Name + '</span>' +
+        '<span class="rep-sug-code">' + e.EmployeeID + '</span>' +
+      '</div>'
+    ).join('');
+    box.style.display = 'block';
+  }
+
+  function pickReportEmp(empId, empName) {
+    document.getElementById('repEmpSearch').value = empName + ' (' + empId + ')';
+    document.getElementById('repEmpId').value = empId;
+    hideReportEmpSuggestions();
+  }
+
+  function hideReportEmpSuggestions() {
+    document.getElementById('repEmpSuggestions').style.display = 'none';
+  }
+
   function submitDetailedReport() {
-    const empId = document.getElementById('repEmpId').value.trim();
+    // لو المستخدم اختار من الاقتراحات، الكود هيبقى محفوظ في repEmpId المخفي.
+    // لو مااختارش، هنجرّب نعتبر النص المكتوب هو الكود مباشرة (زي "E001").
+    let empId = document.getElementById('repEmpId').value.trim();
+    if (!empId) {
+      const raw = document.getElementById('repEmpSearch').value.trim();
+      // نستخرج الكود من النص لو كان بالصيغة "الاسم (E001)"
+      const match = raw.match(/\(([^)]+)\)\s*$/);
+      empId = match ? match[1] : raw;
+    }
     const year = Number(document.getElementById('repYear').value);
     const month = Number(document.getElementById('repMonth').value);
-    if (!empId || !year || !month) return;
+    if (!empId || !year || !month) {
+      document.getElementById('reportResult').innerHTML = '<div class="empty">اختار موظف من قائمة البحث الأول، وتأكد من السنة والشهر.</div>';
+      return;
+    }
 
     document.getElementById('reportResult').innerHTML = '<div class="empty">جاري إنشاء التقرير...</div>';
     apiCall('detailedMonthlyReport', { employeeId: empId, year, month })
@@ -1062,10 +1191,12 @@ input:checked + .slider:before { transform:translateX(-20px); }
     let html = '<div class="card">';
     html += '<div class="stitle">' + r.employeeName + ' (' + r.employeeId + ') — ' + r.month + '/' + r.year + '</div>';
 
-    // أ. ملخص الحضور
+    // أ. ملخص الحضور — بند 23 مُحدَّث: أُضيفت "عدد الشيفتات" منفصلة عن "أيام الحضور"
+    const shiftsCount = (r.attendanceSummary.shiftsCount !== undefined) ? r.attendanceSummary.shiftsCount : r.attendanceSummary.daysWorked;
     html += '<div class="rep-section-title">أ. ملخص الحضور</div>';
     html += '<div class="rep-mini-cards">';
     html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.daysWorked + '</div><div class="rep-mini-lbl">أيام حضور</div></div>';
+    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + shiftsCount + '</div><div class="rep-mini-lbl">عدد الشيفتات</div></div>';
     html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.totalHours + '</div><div class="rep-mini-lbl">إجمالي الساعات</div></div>';
     html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.lateCount + '</div><div class="rep-mini-lbl">مرات تأخير</div></div>';
     html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="rep-mini-lbl">انصراف مبكر</div></div>';
@@ -1108,14 +1239,67 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
     html += '</div>'; // end card
 
-    // و. كشف المرتب النهائي
+    // و. كشف المرتب النهائي — بند 23 مُحدَّث: تفاصيل توضيحية تحت كل بند
     html += '<div class="card">';
     html += '<div class="stitle">و. كشف المرتب النهائي</div>';
     html += '<div class="rep-breakdown">';
+
+    // + المرتب الأساسي (مع تفاصيل الفروع/الشيفتات لو موجودة)
     html += '<div class="rep-line add"><span>+ المرتب الأساسي</span><span class="rep-val">' + r.breakdown.baseSalary.toLocaleString() + ' ج.م</span></div>';
+    if (r.breakdown.baseSalaryBreakdown && r.breakdown.baseSalaryBreakdown.length > 0) {
+      html += '<div class="rep-detail-list">';
+      r.breakdown.baseSalaryBreakdown.forEach(g => {
+        const rateFormatted = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="rep-detail-row">' +
+          '<span class="rep-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
+          '<span class="rep-detail-rhs">' + g.hours + ' ساعة × ' + rateFormatted + ' = ' + g.subtotal.toLocaleString() + ' ج.م</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    // + الأوفر تايم المدفوع (مع تفاصيل المعادلة لو مبلغ > 0)
     html += '<div class="rep-line add"><span>+ الأوفر تايم المدفوع</span><span class="rep-val">' + r.breakdown.overtimePaid.toLocaleString() + ' ج.م</span></div>';
+    if (r.breakdown.overtimeBreakdown && r.breakdown.overtimeBreakdown.length > 0) {
+      html += '<div class="rep-detail-list">';
+      r.breakdown.overtimeBreakdown.forEach(g => {
+        const rateFormatted = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="rep-detail-row">' +
+          '<span class="rep-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
+          '<span class="rep-detail-rhs">' + g.hours + ' ساعة × ' + rateFormatted + ' × ' + g.multiplier + ' = ' + g.subtotal.toLocaleString() + ' ج.م</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    // − خصم دين الوقت المتبقي (مع تفاصيل FIFO لو الرصيد > 0)
     html += '<div class="rep-line sub"><span>− خصم دين الوقت المتبقي</span><span class="rep-val">' + r.breakdown.debtDeduction.toLocaleString() + ' ج.م</span></div>';
+    if (r.breakdown.debtDeductionBreakdown && r.breakdown.debtDeductionBreakdown.length > 0) {
+      html += '<div class="rep-detail-list">';
+      r.breakdown.debtDeductionBreakdown.forEach(chunk => {
+        const rateFormatted = (Math.round(chunk.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="rep-detail-row">' +
+          '<span class="rep-detail-lhs">جزء متبقي (FIFO)</span>' +
+          '<span class="rep-detail-rhs">' + chunk.hours + ' ساعة × ' + rateFormatted + ' = ' + chunk.subtotal.toLocaleString() + ' ج.م</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    // − خصم السلف المعتمدة (مع تفاصيل السلف لو فيه)
     html += '<div class="rep-line sub"><span>− خصم السلف المعتمدة</span><span class="rep-val">' + r.breakdown.advanceDeduction.toLocaleString() + ' ج.م</span></div>';
+    if (r.advances && r.advances.length > 0) {
+      html += '<div class="rep-detail-list">';
+      r.advances.forEach(a => {
+        html += '<div class="rep-detail-row">' +
+          '<span class="rep-detail-lhs">سلفة ' + a.date + '</span>' +
+          '<span class="rep-detail-rhs">' + a.amount.toLocaleString() + ' ج.م</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    // = صافي المرتب
     html += '<div class="rep-line net"><span>= صافي المرتب</span><span class="rep-val">' + r.breakdown.netSalary.toLocaleString() + ' ج.م</span></div>';
     html += '</div></div>';
 
