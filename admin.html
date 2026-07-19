@@ -921,6 +921,118 @@ input:checked + .slider:before { transform:translateX(-20px); }
   .time-note { font-size:.68rem; padding:2px 7px; }
   .debt-strip-v2 { padding:9px 12px; font-size:.75rem; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   بند 37: الهيدر البراند + شريط التنقل السفلي + زرار الرجوع
+   ══════════════════════════════════════════════════════════ */
+
+/* توسيع مساحة أسفل الصفحة عشان الـBottom Nav ما يغطيش المحتوى */
+body { padding-bottom:calc(96px + var(--safe-bottom)); }
+
+/* ---------- الهيدر البراند الجديد (أخضر متدرج + لوجو + اسم إنجليزي) ---------- */
+.brand-header {
+  background:linear-gradient(135deg, #4e9012 0%, #6abf1e 100%);
+  color:white; border-radius:var(--radius-lg);
+  padding:14px 18px; margin-bottom:14px;
+  box-shadow:var(--shadow-green);
+  display:flex; align-items:center; gap:14px;
+  position:relative; overflow:hidden;
+}
+.brand-header::before {
+  content:""; position:absolute; top:-30px; left:-25px;
+  width:130px; height:130px; border-radius:50%;
+  background:rgba(255,255,255,.07);
+  pointer-events:none;
+}
+.brand-header::after {
+  content:""; position:absolute; bottom:-40px; right:-30px;
+  width:110px; height:110px; border-radius:50%;
+  background:rgba(255,255,255,.05);
+  pointer-events:none;
+}
+
+.brand-logo-wrap {
+  width:52px; height:52px; border-radius:50%;
+  background:white;
+  display:flex; align-items:center; justify-content:center;
+  padding:6px; flex-shrink:0;
+  box-shadow:0 4px 12px rgba(0,0,0,.14);
+  position:relative; z-index:1;
+}
+.brand-logo-img {
+  width:100%; height:100%; object-fit:contain; border-radius:50%;
+}
+
+.brand-text { flex:1; min-width:0; position:relative; z-index:1; }
+.brand-name {
+  font-weight:900; font-size:1rem;
+  letter-spacing:1.2px; line-height:1.1;
+  font-family:"Cairo", sans-serif;
+}
+.brand-tag {
+  font-size:.72rem; opacity:.92; font-weight:700;
+  margin-top:3px;
+}
+
+.brand-back-btn {
+  background:rgba(255,255,255,.2); backdrop-filter:blur(6px);
+  border:1.5px solid rgba(255,255,255,.28);
+  color:white; width:36px; height:36px; border-radius:50%;
+  cursor:pointer; font-size:1.15rem; font-weight:900;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; position:relative; z-index:1;
+  transition:all .2s;
+  font-family:"Cairo", sans-serif;
+}
+.brand-back-btn:hover { background:rgba(255,255,255,.32); transform:translateX(3px); }
+.brand-back-btn:active { transform:translateX(0) scale(.95); }
+
+/* ---------- شريط التنقل السفلي (Bottom Navigation) ---------- */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0;
+  background:white;
+  box-shadow:0 -4px 16px rgba(0,0,0,.08);
+  padding:8px 6px calc(8px + var(--safe-bottom));
+  display:flex; align-items:center; justify-content:space-around;
+  gap:2px; z-index:100;
+  border-top:1.5px solid var(--b3);
+  overflow-x:auto;
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+.bottom-nav::-webkit-scrollbar { display:none; }
+
+.bnav-btn {
+  flex:1 0 auto; min-width:56px;
+  border:none; background:transparent;
+  padding:8px 4px; border-radius:12px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; transition:all .2s;
+  color:var(--m); font-family:"Cairo", sans-serif;
+}
+.bnav-btn:active { transform:scale(.94); }
+.bnav-btn.act {
+  background:linear-gradient(135deg, var(--gl), var(--gp));
+  color:var(--gd);
+}
+.bnav-btn.act .bnav-icon { transform:scale(1.15); }
+.bnav-icon {
+  font-size:1.15rem; line-height:1;
+  transition:transform .2s;
+}
+.bnav-lbl {
+  font-size:.62rem; font-weight:800;
+  white-space:nowrap;
+}
+
+/* ---------- تعديلات mobile للـBottom Nav ---------- */
+@media (max-width: 380px) {
+  .bnav-btn { padding:7px 3px; min-width:48px; }
+  .bnav-icon { font-size:1.05rem; }
+  .bnav-lbl { font-size:.58rem; }
+  .brand-logo-wrap { width:46px; height:46px; padding:5px; }
+  .brand-name { font-size:.92rem; letter-spacing:1px; }
+  .brand-tag { font-size:.68rem; }
+}
 </style>
 </head>
 <body>
@@ -948,19 +1060,18 @@ input:checked + .slider:before { transform:translateX(-20px); }
   </div>
 </div>
 
-<div class="hdr">
-  <h1>🏢 دجله لاب — لوحة صاحب العمل</h1>
-  <p>النظام الحسابي الجديد (القائم على الوقت)</p>
-</div>
-
-<div class="tab-bar">
-  <button class="tab-btn act" data-panel="home">🏠 الرئيسية</button>
-  <button class="tab-btn" data-panel="review">🔎 مراجعة</button>
-  <button class="tab-btn" data-panel="attlog">📋 سجل الحضور</button>
-  <button class="tab-btn" data-panel="employees">👥 الموظفين</button>
-  <button class="tab-btn" data-panel="absence">📅 طلبات الموظفين</button>
-  <button class="tab-btn" data-panel="reports">📊 التقارير</button>
-  <button class="tab-btn" data-panel="month">🔒 قفل الشهر</button>
+<!-- بند 37: الهيدر البراند الجديد — لوجو + اسم إنجليزي + زرار رجوع -->
+<div class="brand-header">
+  <button class="brand-back-btn" id="brandBackBtn" onclick="navigateBack()" style="display:none;" title="رجوع للتاب السابق">
+    <span>←</span>
+  </button>
+  <div class="brand-logo-wrap">
+    <img src="logo.png" alt="Degla Smart Lab" class="brand-logo-img"/>
+  </div>
+  <div class="brand-text">
+    <div class="brand-name">DEGLA SMART LAB</div>
+    <div class="brand-tag">لوحة صاحب العمل</div>
+  </div>
 </div>
 
 <!-- بند 18 + 37: شاشة الرئيسية المحسّنة (Home Dashboard v2) -->
@@ -1219,22 +1330,68 @@ input:checked + .slider:before { transform:translateX(-20px); }
     });
   }
 
-  document.querySelectorAll('.tab-btn').forEach(tab => {
+  // ==========================================================================
+  // بند 37: نظام التنقل المحسّن — Bottom Nav + History-based Back Button
+  // ==========================================================================
+
+  /** سجل التاريخ: يحفظ كل تاب اتفتح بالترتيب. آخر عنصر = التاب الحالي */
+  const navHistory = ['home'];
+
+  /** تفعيل تاب معيّن — قلب المنطق. بيعمل التبديل البصري + تحميل بيانات التاب لو محتاج */
+  function activateTab(panelName) {
+    // تحديث الأزرار: إظهار الجاي، إخفاء اللي عادي
+    document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('act'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+    const targetBtn = document.querySelector('.bnav-btn[data-panel="' + panelName + '"]');
+    if (targetBtn) targetBtn.classList.add('act');
+
+    const targetPanel = document.getElementById('panel-' + panelName);
+    if (targetPanel) targetPanel.classList.add('active');
+
+    // Scroll لأعلى الصفحة لضمان تجربة نظيفة
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // تحميل البيانات المناسبة لكل تاب
+    if (panelName === 'review') loadReviewList();
+    if (panelName === 'home') loadDashboard();
+    if (panelName === 'employees') loadEmployeeList();
+    if (panelName === 'attlog') loadAttendanceLog();
+    if (panelName === 'absence') loadUnifiedRequests();
+    if (panelName === 'reports') {
+      initReportPickers();
+      if (!cachedEmployees || cachedEmployees.length === 0) loadEmployeeList();
+    }
+
+    // تحديث حالة زرار الرجوع: يبان لو فيه أكتر من تاب في التاريخ
+    updateBackBtnVisibility();
+  }
+
+  /** إظهار/إخفاء زرار الرجوع حسب طول التاريخ */
+  function updateBackBtnVisibility() {
+    const backBtn = document.getElementById('brandBackBtn');
+    if (backBtn) backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+  }
+
+  /** الرجوع للتاب السابق — يحذف الحالي من التاريخ ويرجع للسابق */
+  function navigateBack() {
+    if (navHistory.length <= 1) return; // مفيش تاريخ للرجوع
+    navHistory.pop(); // شيل الحالي
+    const previousTab = navHistory[navHistory.length - 1]; // آخر عنصر بقى هو السابق
+    activateTab(previousTab); // فعّله من غير ما يضيف للتاريخ (وده هيتحكم فيه في addEventListener)
+  }
+
+  /** ربط أزرار Bottom Nav — بتضيف كل ضغطة جديدة للتاريخ */
+  document.querySelectorAll('.bnav-btn').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('act'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('act');
-      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
-      if (tab.dataset.panel === 'review') loadReviewList();
-      if (tab.dataset.panel === 'home') loadDashboard();
-      if (tab.dataset.panel === 'employees') loadEmployeeList();
-      if (tab.dataset.panel === 'attlog') loadAttendanceLog();
-      if (tab.dataset.panel === 'absence') loadUnifiedRequests();
-      if (tab.dataset.panel === 'reports') {
-        // بند 23 مُحدَّث: نجهز اختيارات السنة/الشهر ونحمّل الموظفين لشريط البحث الموحّد
-        initReportPickers();
-        if (!cachedEmployees || cachedEmployees.length === 0) loadEmployeeList();
+      const panelName = tab.dataset.panel;
+      // ماتضيفش نفس التاب لو هو اللي شغال حاليًا
+      if (navHistory[navHistory.length - 1] !== panelName) {
+        navHistory.push(panelName);
+        // نحدد سقف للتاريخ (10 خطوات) عشان مايكبرش بلا داعي
+        if (navHistory.length > 10) navHistory.shift();
       }
+      activateTab(panelName);
     });
   });
 
@@ -2170,5 +2327,38 @@ input:checked + .slider:before { transform:translateX(-20px); }
 
   loadDashboard();
 </script>
+
+<!-- بند 37: شريط التنقل السفلي (Bottom Navigation) — أسهل للأصابع على الموبيل -->
+<nav class="bottom-nav">
+  <button class="bnav-btn act" data-panel="home">
+    <span class="bnav-icon">🏠</span>
+    <span class="bnav-lbl">الرئيسية</span>
+  </button>
+  <button class="bnav-btn" data-panel="review">
+    <span class="bnav-icon">🔎</span>
+    <span class="bnav-lbl">مراجعة</span>
+  </button>
+  <button class="bnav-btn" data-panel="attlog">
+    <span class="bnav-icon">📋</span>
+    <span class="bnav-lbl">الحضور</span>
+  </button>
+  <button class="bnav-btn" data-panel="employees">
+    <span class="bnav-icon">👥</span>
+    <span class="bnav-lbl">الموظفين</span>
+  </button>
+  <button class="bnav-btn" data-panel="absence">
+    <span class="bnav-icon">📅</span>
+    <span class="bnav-lbl">الطلبات</span>
+  </button>
+  <button class="bnav-btn" data-panel="reports">
+    <span class="bnav-icon">📊</span>
+    <span class="bnav-lbl">التقارير</span>
+  </button>
+  <button class="bnav-btn" data-panel="month">
+    <span class="bnav-icon">🔒</span>
+    <span class="bnav-lbl">قفل الشهر</span>
+  </button>
+</nav>
+
 </body>
 </html>
