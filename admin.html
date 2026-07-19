@@ -701,6 +701,226 @@ input:checked + .slider:before { transform:translateX(-20px); }
 @media (min-width: 481px) {
   .stats-grid { grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
 }
+
+/* ══════════════════════════════════════════════════════════
+   بند 37: سجل الحضور المحسّن (Attendance Log v2)
+   نفس اللغة البصرية للرئيسية والتقارير
+   ══════════════════════════════════════════════════════════ */
+
+/* ---------- شريط الفلاتر المحسّن ---------- */
+.att-filter-card {
+  background:white; border-radius:var(--radius-lg);
+  padding:16px; margin-bottom:12px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--b3);
+}
+.att-filter-title {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:12px;
+}
+.att-filter-title-icon {
+  width:34px; height:34px; border-radius:12px;
+  background:var(--gl); color:var(--gd);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+}
+.att-filter-title-txt {
+  font-weight:900; font-size:.95rem; color:var(--t);
+}
+.att-filter-title-btn {
+  margin-right:auto;
+  background:var(--gl); color:var(--gd); border:none;
+  padding:7px 12px; border-radius:10px;
+  font-family:"Cairo",sans-serif; font-size:.72rem; font-weight:700;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:5px;
+}
+.att-filter-title-btn:hover { background:var(--g); color:white; }
+.att-filter-title-btn:active { transform:scale(.96); }
+
+.att-mode-toggle {
+  display:flex; gap:6px; background:var(--b3);
+  border-radius:12px; padding:4px; margin-bottom:10px;
+}
+.att-mode-btn {
+  flex:1; padding:9px 8px; border:none; border-radius:9px;
+  font-family:"Cairo",sans-serif; font-size:.78rem; font-weight:700;
+  cursor:pointer; background:transparent; color:var(--m);
+  transition:all .2s;
+}
+.att-mode-btn.act {
+  background:var(--gd); color:white;
+  box-shadow:0 2px 6px rgba(78,144,18,.28);
+}
+
+.att-search-wrap { position:relative; margin-bottom:8px; }
+.att-search-wrap::before {
+  content:"🔍"; position:absolute; right:12px; top:50%;
+  transform:translateY(-50%); font-size:.9rem; opacity:.5;
+  pointer-events:none;
+}
+.att-search-input {
+  width:100%; padding:11px 40px 11px 14px;
+  border:1.5px solid var(--b3); border-radius:12px;
+  font-family:"Cairo",sans-serif; font-size:.85rem;
+  outline:none; background:white; transition:border-color .2s;
+}
+.att-search-input:focus { border-color:var(--g); }
+
+.att-date-picker {
+  width:100%; padding:11px 14px;
+  border:1.5px solid var(--b3); border-radius:12px;
+  font-family:"Cairo",sans-serif; font-size:.85rem;
+  outline:none; background:white; transition:border-color .2s;
+  margin-bottom:8px;
+}
+.att-date-picker:focus { border-color:var(--g); }
+
+.att-count-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--gl); color:var(--gd);
+  border-radius:20px; padding:5px 12px;
+  font-size:.72rem; font-weight:800;
+  margin-top:4px;
+}
+
+/* ---------- كارت اليوم المحسّن ---------- */
+.day-card-v2 {
+  background:white; border-radius:var(--radius-lg);
+  border:1.5px solid var(--b3); margin-bottom:12px;
+  overflow:hidden; box-shadow:var(--shadow-sm);
+  transition:box-shadow .2s;
+}
+.day-card-v2:hover { box-shadow:var(--shadow-md); }
+.day-header-v2 {
+  background:linear-gradient(135deg, var(--gp), var(--gl));
+  padding:12px 16px;
+  display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid var(--gl);
+}
+.day-header-icon {
+  width:32px; height:32px; border-radius:10px;
+  background:var(--gd); color:white;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; flex-shrink:0;
+}
+.day-header-info { flex:1; min-width:0; }
+.day-header-date { font-weight:900; font-size:.88rem; color:var(--gd); line-height:1.2; }
+.day-header-emp { font-size:.75rem; color:var(--m); font-weight:700; margin-top:2px; }
+
+/* ---------- بلوك الشيفت المحسّن ---------- */
+.shift-block-v2 {
+  padding:14px 16px;
+  border-top:1px dashed var(--b3);
+}
+.shift-block-v2:first-child { border-top:none; }
+
+.shift-header-v2 {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:10px;
+}
+.shift-badge {
+  background:var(--info-l); color:var(--info-d);
+  border-radius:20px; padding:4px 12px;
+  font-size:.72rem; font-weight:800;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.shift-branch {
+  color:var(--m); font-weight:700; font-size:.75rem;
+}
+.shift-branch::before { content:"·"; margin:0 4px; opacity:.5; }
+
+/* ---------- شريط الأوقات (Timeline) — نمط أفقي أنيق ---------- */
+.times-strip {
+  background:#fbfcfa; border-radius:var(--radius-sm);
+  padding:12px 14px; margin-top:6px;
+  display:flex; flex-direction:column; gap:8px;
+  border:1px solid var(--b3);
+}
+.time-row {
+  display:flex; align-items:center; gap:10px;
+  font-size:.78rem;
+}
+.time-icon {
+  width:28px; height:28px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; flex-shrink:0;
+}
+.time-icon.in { background:var(--gl); color:var(--gd); }
+.time-icon.out { background:var(--rl); color:var(--r); }
+.time-icon.open { background:var(--warn-l); color:var(--warn-d); }
+
+.time-lbl {
+  color:var(--m); font-weight:700; font-size:.72rem;
+  min-width:52px;
+}
+.time-value {
+  font-weight:900; font-size:.92rem;
+  font-variant-numeric:tabular-nums;
+}
+.time-value.in { color:var(--gd); }       /* وقت الدخول — أخضر */
+.time-value.out { color:var(--r); }       /* وقت الخروج — أحمر */
+.time-value.open { color:var(--warn-d); } /* لسه مفتوح */
+
+.time-note {
+  color:var(--m); font-weight:700; font-size:.72rem;
+  padding:3px 9px; border-radius:8px;
+  background:#f1f3ef;
+  margin-right:auto;
+}
+.time-note.late { background:#fff2e6; color:#d84315; }    /* تأخير — برتقالي */
+.time-note.overtime { background:#f0e6f9; color:#6a1b9a; } /* أوفر تايم — بنفسجي */
+.time-note.early-arrival { background:var(--info-l); color:var(--info-d); } /* حضر بدري */
+.time-note.early-departure { background:#fff0e0; color:#e65100; } /* انصراف مبكر */
+.time-note.on-time { background:var(--gl); color:var(--gd); }  /* في الميعاد */
+
+/* ---------- شريط الخصم المحسّن ---------- */
+.debt-strip-v2 {
+  margin-top:10px;
+  padding:10px 14px;
+  border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; flex-wrap:wrap;
+  font-size:.78rem;
+  border:1.5px solid;
+}
+.debt-strip-v2.active { background:var(--warn-l); border-color:var(--warn); color:var(--warn-d); }
+.debt-strip-v2.cancelled { background:#f5f5f5; border-color:var(--b3); color:var(--m); }
+.debt-strip-v2.cancelled .debt-txt { text-decoration:line-through; }
+.debt-strip-v2 b { font-weight:900; }
+
+.debt-info-row { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+.debt-info-icon {
+  width:26px; height:26px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.8rem; flex-shrink:0;
+}
+.debt-strip-v2.active .debt-info-icon { background:var(--warn); color:white; }
+.debt-strip-v2.cancelled .debt-info-icon { background:var(--b4); color:white; }
+
+.btn-mini-v2 {
+  border:none; border-radius:9px;
+  padding:7px 12px;
+  font-family:"Cairo",sans-serif; font-size:.7rem; font-weight:800;
+  cursor:pointer; transition:all .2s;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.btn-mini-v2:active { transform:scale(.96); }
+.btn-mini-v2.cancel { background:var(--r); color:white; box-shadow:0 3px 8px rgba(229,57,53,.25); }
+.btn-mini-v2.reenable { background:var(--gd); color:white; box-shadow:0 3px 8px rgba(78,144,18,.25); }
+
+/* ---------- تحسينات mobile للحضور ---------- */
+@media (max-width: 480px) {
+  .day-header-v2 { padding:10px 14px; }
+  .day-header-date { font-size:.82rem; }
+  .day-header-emp { font-size:.7rem; }
+  .shift-block-v2 { padding:12px 14px; }
+  .times-strip { padding:10px 12px; }
+  .time-value { font-size:.88rem; }
+  .time-icon { width:26px; height:26px; font-size:.8rem; }
+  .time-lbl { min-width:44px; font-size:.68rem; }
+  .time-note { font-size:.68rem; padding:2px 7px; }
+  .debt-strip-v2 { padding:9px 12px; font-size:.75rem; }
+}
 </style>
 </head>
 <body>
@@ -814,24 +1034,30 @@ input:checked + .slider:before { transform:translateX(-20px); }
   </div>
 </div>
 
-<!-- بند 19: سجل الحضور الكامل -->
+<!-- بند 19 + 37: سجل الحضور الكامل — تصميم محسّن -->
 <div class="panel" id="panel-attlog">
-  <div class="card">
-    <div class="stitle">سجل الحضور <button class="mini-btn" onclick="loadAttendanceLog()">تحديث</button></div>
-
-    <div class="row2" style="margin-bottom:10px;">
-      <button class="btn bng" id="attFilterAll" onclick="setAttFilter('all')">الكل</button>
-      <button class="btn bno" id="attFilterToday" onclick="setAttFilter('today')">اليوم</button>
+  <div class="att-filter-card">
+    <div class="att-filter-title">
+      <div class="att-filter-title-icon">📋</div>
+      <div class="att-filter-title-txt">سجل الحضور</div>
+      <button class="att-filter-title-btn" onclick="loadAttendanceLog()">🔄 تحديث</button>
     </div>
-    <div class="fg"><input type="date" id="attDatePicker" onchange="setAttFilter('date')"></div>
-    <div style="position:relative; margin-bottom:8px;">
-      <input type="text" id="attSearch" placeholder="بحث بالاسم أو الكود..." oninput="renderAttendanceLog()"
-        style="width:100%; padding:11px 14px; border:2px solid var(--b3); border-radius:12px; font-family:'Cairo',sans-serif; font-size:.88rem; outline:none; background:white;"/>
-    </div>
-    <div id="attCount" style="font-size:.72rem; color:var(--m); margin-bottom:10px;"></div>
 
-    <div id="attLogList"><div class="empty">جاري التحميل...</div></div>
+    <div class="att-mode-toggle">
+      <button class="att-mode-btn act" id="attFilterAll" onclick="setAttFilter('all')">📆 الكل</button>
+      <button class="att-mode-btn" id="attFilterToday" onclick="setAttFilter('today')">☀️ اليوم</button>
+    </div>
+
+    <input type="date" id="attDatePicker" class="att-date-picker" onchange="setAttFilter('date')">
+
+    <div class="att-search-wrap">
+      <input type="text" id="attSearch" class="att-search-input" placeholder="بحث بالاسم أو الكود..." oninput="renderAttendanceLog()"/>
+    </div>
+
+    <div id="attCount" class="att-count-badge" style="display:none;"></div>
   </div>
+
+  <div id="attLogList"><div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div></div>
 </div>
 
 <!-- بند 8: إدارة الموظفين -->
@@ -1108,18 +1334,31 @@ input:checked + .slider:before { transform:translateX(-20px); }
   let attFilterDate = '';
 
   function loadAttendanceLog() {
-    document.getElementById('attLogList').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
     apiCall('attendanceLog')
       .then(events => { cachedAttLog = events || []; renderAttendanceLog(); })
-      .catch(err => document.getElementById('attLogList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+      .catch(err => document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
   }
 
   function setAttFilter(mode) {
     attFilterMode = mode;
     if (mode === 'date') attFilterDate = document.getElementById('attDatePicker').value;
-    document.getElementById('attFilterAll').className = 'btn ' + (mode === 'all' ? 'bng' : 'bno');
-    document.getElementById('attFilterToday').className = 'btn ' + (mode === 'today' ? 'bng' : 'bno');
+    // بند 37: تحديث حالة الأزرار بالكلاس الجديد
+    const btnAll = document.getElementById('attFilterAll');
+    const btnToday = document.getElementById('attFilterToday');
+    btnAll.className = 'att-mode-btn' + (mode === 'all' ? ' act' : '');
+    btnToday.className = 'att-mode-btn' + (mode === 'today' ? ' act' : '');
     renderAttendanceLog();
+  }
+
+  /** بند 37: تصنيف الحالة النصية للون مناسب في time-note (يستخدم time-note.late/overtime/etc) */
+  function getNoteClassV2(note) {
+    if (note.indexOf('تأخر') !== -1) return 'late';
+    if (note.indexOf('انصراف مبكر') !== -1) return 'early-departure';
+    if (note.indexOf('أوفر تايم') !== -1) return 'overtime';
+    if (note.indexOf('تقدَّم') !== -1) return 'early-arrival';
+    if (note.indexOf('في الموعد') !== -1) return 'on-time';
+    return '';
   }
 
   /** بند 37: تصنيف الحالة النصية للون مناسب — موحَّد في كل مكان بيعرض ملاحظة حضور/انصراف */
@@ -1133,7 +1372,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
   function renderAttendanceLog() {
-    const todayStr = new Date().toLocaleDateString('en-CA'); // yyyy-MM-dd بتوقيت الجهاز المحلي (نفس أسلوب R1)
+    const todayStr = new Date().toLocaleDateString('en-CA');
     const query = (document.getElementById('attSearch').value || '').toLowerCase();
 
     let filtered = cachedAttLog;
@@ -1144,14 +1383,17 @@ input:checked + .slider:before { transform:translateX(-20px); }
       filtered = filtered.filter(e => e.employeeName.toLowerCase().includes(query) || String(e.employeeId).toLowerCase().includes(query));
     }
 
-    document.getElementById('attCount').textContent = filtered.length + ' سجل — من إجمالي ' + cachedAttLog.length;
+    // بند 37: عرض العدد بشكل badge أنيق
+    const countEl = document.getElementById('attCount');
+    countEl.textContent = '📊 ' + filtered.length + ' سجل — من إجمالي ' + cachedAttLog.length;
+    countEl.style.display = 'inline-flex';
 
     if (filtered.length === 0) {
-      document.getElementById('attLogList').innerHTML = '<div class="empty">مفيش سجلات مطابقة</div>';
+      document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">🔍</div><div class="empty-txt">مفيش سجلات مطابقة</div></div>';
       return;
     }
 
-    // بند 36: تجميع حسب (التاريخ + الموظف) — كارت واحد لليوم يحتوي كل شيفتاته (واحد أو أكتر)
+    // بند 36: تجميع حسب (التاريخ + الموظف)
     const dayGroups = {};
     const dayOrder = [];
 
@@ -1173,38 +1415,90 @@ input:checked + .slider:before { transform:translateX(-20px); }
     let html = '';
     dayOrder.forEach(dayKey => {
       const group = dayGroups[dayKey];
-      html += '<div class="day-card">';
-      html += '<div class="day-header">📅 ' + group.date + ' — ' + group.employeeName + '</div>';
+
+      html += '<div class="day-card-v2">';
+      html += '<div class="day-header-v2">' +
+        '<div class="day-header-icon">📅</div>' +
+        '<div class="day-header-info">' +
+          '<div class="day-header-date">' + group.date + '</div>' +
+          '<div class="day-header-emp">' + group.employeeName + ' (' + group.employeeId + ')</div>' +
+        '</div>' +
+      '</div>';
 
       group.shiftOrder.forEach(recordId => {
         const s = group.shifts[recordId];
-        html += '<div class="shift-block">';
-        html += '<div class="shift-label">' + s.shift + ' / ' + s.branch + '</div>';
-        html += '<div class="shift-times">';
-        html += s.checkin ? '<span class="' + getNoteClass(s.checkin.note) + '">✅ ' + s.checkin.time + ' — ' + s.checkin.note + '</span>' : '<span class="note-neutral">—</span>';
-        html += '<span class="st-arrow">←</span>';
-        html += s.checkout ? '<span class="' + getNoteClass(s.checkout.note) + '">🔴 ' + s.checkout.time + ' — ' + s.checkout.note + '</span>' : '<span class="note-open">⏳ لسه مفتوح</span>';
-        html += '</div>';
+        html += '<div class="shift-block-v2">';
 
-        // بند 35.1: الشريط الاحترافي — يظهر مرة واحدة بس لكل شيفت (من أي حدث فيه hasDebt=true)
+        // ترويسة الشيفت — بادج للشيفت + اسم الفرع
+        html += '<div class="shift-header-v2">' +
+          '<span class="shift-badge">🕐 ' + s.shift + '</span>' +
+          '<span class="shift-branch">' + s.branch + '</span>' +
+        '</div>';
+
+        // شريط الأوقات — كل زمن في سطر لوحده مع أيقونته وملاحظته
+        html += '<div class="times-strip">';
+
+        // سطر الدخول
+        if (s.checkin) {
+          const noteCls = getNoteClassV2(s.checkin.note);
+          html += '<div class="time-row">' +
+            '<div class="time-icon in">🟢</div>' +
+            '<div class="time-lbl">دخول</div>' +
+            '<div class="time-value in">' + s.checkin.time + '</div>' +
+            '<div class="time-note ' + noteCls + '">' + s.checkin.note + '</div>' +
+          '</div>';
+        } else {
+          html += '<div class="time-row">' +
+            '<div class="time-icon in">—</div>' +
+            '<div class="time-lbl">دخول</div>' +
+            '<div class="time-value" style="color:var(--m);">غير مسجَّل</div>' +
+          '</div>';
+        }
+
+        // سطر الخروج
+        if (s.checkout) {
+          const noteCls = getNoteClassV2(s.checkout.note);
+          html += '<div class="time-row">' +
+            '<div class="time-icon out">🔴</div>' +
+            '<div class="time-lbl">خروج</div>' +
+            '<div class="time-value out">' + s.checkout.time + '</div>' +
+            '<div class="time-note ' + noteCls + '">' + s.checkout.note + '</div>' +
+          '</div>';
+        } else {
+          html += '<div class="time-row">' +
+            '<div class="time-icon open">⏳</div>' +
+            '<div class="time-lbl">خروج</div>' +
+            '<div class="time-value open">لسه مفتوح</div>' +
+          '</div>';
+        }
+
+        html += '</div>'; // نهاية times-strip
+
+        // بند 35.1: شريط الدين — تصميم محسّن
         const debtEvent = (s.checkout && s.checkout.hasDebt) ? s.checkout : ((s.checkin && s.checkin.hasDebt) ? s.checkin : null);
         if (debtEvent) {
           const statusClass = debtEvent.debtCancelled ? 'cancelled' : 'active';
-          const statusLabel = debtEvent.debtCancelled ? '❌ ملغى' : '✅ فعّال';
-          html += '<div class="debt-strip ' + statusClass + '">';
-          html += '<span>⏱️ دين ' + debtEvent.debtHours + ' ساعة — <b>' + statusLabel + '</b></span>';
+          const statusLabel = debtEvent.debtCancelled ? 'ملغى' : 'فعّال';
+          const statusEmoji = debtEvent.debtCancelled ? '❌' : '⚠️';
+          html += '<div class="debt-strip-v2 ' + statusClass + '">' +
+            '<div class="debt-info-row">' +
+              '<div class="debt-info-icon">⏱</div>' +
+              '<span class="debt-txt">دين <b>' + debtEvent.debtHours + '</b> ساعة — ' + statusEmoji + ' ' + statusLabel + '</span>' +
+            '</div>';
           if (debtEvent.debtCancelled) {
-            html += '<button class="btn-mini reenable" onclick="reenableDeduction(\'' + recordId + '\')">إعادة تفعيل</button>';
+            html += '<button class="btn-mini-v2 reenable" onclick="reenableDeduction(\'' + recordId + '\')">🔄 إعادة تفعيل</button>';
           } else {
-            html += '<button class="btn-mini cancel" onclick="cancelDeduction(\'' + recordId + '\')">إلغاء الخصم</button>';
+            html += '<button class="btn-mini-v2 cancel" onclick="cancelDeduction(\'' + recordId + '\')">✖ إلغاء الخصم</button>';
           }
           html += '</div>';
         }
-        html += '</div>';
+
+        html += '</div>'; // نهاية shift-block-v2
       });
 
-      html += '</div>';
+      html += '</div>'; // نهاية day-card-v2
     });
+
     document.getElementById('attLogList').innerHTML = html;
   }
 
