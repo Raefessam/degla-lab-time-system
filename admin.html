@@ -28,6 +28,20 @@
     --bg: #f0f2ee; --t: #2a3020; --m: #7a8572;
     --b3: #e4e8e0; --b4: #c8cfc2;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* بند 37: طبقة ألوان موسّعة للتحسين البصري (بند 37: تجربة صاحب العمل) */
+    --g-glow: rgba(106,191,30,.35);
+    --info: #1e88e5; --info-l: #e8f2fc; --info-d: #1565c0;
+    --warn: #f39c12; --warn-l: #fef5e7; --warn-d: #B9770E;
+    --purple: #8e44ad; --purple-l: #f3e6fa;
+    --shadow-sm: 0 2px 6px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 14px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --shadow-green: 0 6px 18px rgba(78,144,18,.22);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 22px;
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
@@ -293,6 +307,400 @@ input:checked + .slider:before { transform:translateX(-20px); }
 .emp-chip { display:inline-flex; align-items:center; gap:6px; background:var(--gp); border:1px solid var(--b3); border-radius:20px; padding:5px 12px; font-size:.75rem; margin:0 4px 6px 0; }
 .emp-chip .shift-tag { color:var(--m); font-size:.68rem; }
 .footer { text-align:center; font-size:.68rem; color:var(--b4); margin-top:18px; }
+
+/* ══════════════════════════════════════════════════════════
+   بند 37: التحسينات البصرية الشاملة — الرئيسية والتقارير
+   Mobile-first، طابع حيوي، الأخضر كهوية أساسية
+   ══════════════════════════════════════════════════════════ */
+
+/* ---------- الشريط العلوي المحسّن (Header v2) ---------- */
+.hero {
+  background:linear-gradient(135deg, #4e9012 0%, #6abf1e 100%);
+  color:white; border-radius:var(--radius-lg);
+  padding:18px 20px; margin-bottom:16px;
+  box-shadow:var(--shadow-green);
+  position:relative; overflow:hidden;
+}
+.hero::before {
+  content:""; position:absolute; top:-40px; left:-30px;
+  width:140px; height:140px; border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.hero::after {
+  content:""; position:absolute; bottom:-50px; right:-40px;
+  width:160px; height:160px; border-radius:50%;
+  background:rgba(255,255,255,.05);
+}
+.hero-greeting { font-size:.75rem; opacity:.9; margin-bottom:2px; font-weight:700; position:relative; }
+.hero-title { font-size:1.15rem; font-weight:900; margin-bottom:4px; position:relative; }
+.hero-date { font-size:.72rem; opacity:.85; position:relative; }
+.hero-refresh {
+  position:absolute; top:14px; left:14px;
+  background:rgba(255,255,255,.18); border:none;
+  color:white; width:36px; height:36px; border-radius:50%;
+  cursor:pointer; font-size:1rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.hero-refresh:hover { background:rgba(255,255,255,.28); transform:rotate(45deg); }
+.hero-refresh:active { transform:rotate(90deg) scale(.95); }
+
+/* ---------- كارتات الإحصائيات المحسّنة (v2) ---------- */
+.stats-grid {
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.stat-card-v2 {
+  background:white;
+  border-radius:var(--radius-md);
+  padding:14px 12px;
+  box-shadow:var(--shadow-sm);
+  border:1.5px solid var(--b3);
+  position:relative; overflow:hidden;
+  transition:transform .18s, box-shadow .2s;
+}
+.stat-card-v2:active { transform:scale(.98); }
+.stat-card-v2::before {
+  content:""; position:absolute; top:0; right:0;
+  width:5px; height:100%;
+}
+.stat-card-v2.safe::before { background:var(--g); }
+.stat-card-v2.danger::before { background:var(--r); }
+.stat-card-v2.warn::before { background:var(--warn); }
+.stat-card-v2.info::before { background:var(--info); }
+.stat-card-v2.neutral::before { background:var(--m); }
+
+.stat-icon {
+  width:36px; height:36px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; margin-bottom:10px;
+}
+.stat-card-v2.safe .stat-icon { background:var(--gl); color:var(--gd); }
+.stat-card-v2.danger .stat-icon { background:var(--rl); color:var(--r); }
+.stat-card-v2.warn .stat-icon { background:var(--warn-l); color:var(--warn-d); }
+.stat-card-v2.info .stat-icon { background:var(--info-l); color:var(--info-d); }
+.stat-card-v2.neutral .stat-icon { background:#f1f3ef; color:var(--m); }
+
+.stat-num-v2 {
+  font-size:1.75rem; font-weight:900; color:var(--t);
+  line-height:1.1; margin-bottom:4px;
+}
+.stat-card-v2.safe .stat-num-v2 { color:var(--gd); }
+.stat-card-v2.danger .stat-num-v2 { color:var(--r); }
+.stat-card-v2.warn .stat-num-v2 { color:var(--warn-d); }
+.stat-card-v2.info .stat-num-v2 { color:var(--info-d); }
+
+.stat-lbl-v2 { font-size:.7rem; color:var(--m); font-weight:700; line-height:1.35; }
+
+/* ---------- التنبيهات المحسّنة ---------- */
+.alerts-v2 { margin-bottom:14px; }
+.alert-v2 {
+  background:white; border-radius:var(--radius-md);
+  padding:12px 14px; margin-bottom:8px;
+  display:flex; align-items:flex-start; gap:12px;
+  box-shadow:var(--shadow-sm);
+  border-right:4px solid;
+  font-size:.8rem; font-weight:700;
+  animation:alertSlide .4s ease;
+}
+@keyframes alertSlide {
+  from { opacity:0; transform:translateY(-8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.alert-v2.debt { border-right-color:var(--warn-d); color:var(--warn-d); background:var(--warn-l); }
+.alert-v2.month-end { border-right-color:#e6b800; color:#856404; background:#fff8dd; }
+.alert-v2.absence { border-right-color:var(--info); color:var(--info-d); background:var(--info-l); }
+.alert-icon-v2 { font-size:1.15rem; flex-shrink:0; }
+.alert-msg-v2 { flex:1; line-height:1.5; }
+
+/* ---------- قسم الفروع النشطة (v2) ---------- */
+.section-title {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px;
+}
+.section-title-txt {
+  font-weight:900; font-size:.95rem; color:var(--t);
+  display:flex; align-items:center; gap:8px;
+}
+.section-title-icon {
+  width:30px; height:30px; border-radius:10px;
+  background:var(--gl); color:var(--gd);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.95rem;
+}
+
+.branch-card {
+  background:white; border-radius:var(--radius-md);
+  padding:14px; margin-bottom:10px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--b3);
+  border-right:4px solid var(--g);
+}
+.branch-card:last-child { margin-bottom:0; }
+.branch-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.branch-name-v2 {
+  font-weight:900; font-size:.88rem; color:var(--t);
+  display:flex; align-items:center; gap:8px;
+}
+.branch-count {
+  background:var(--gl); color:var(--gd);
+  border-radius:20px; padding:3px 12px;
+  font-size:.72rem; font-weight:900;
+}
+.emp-list {
+  display:flex; flex-wrap:wrap; gap:6px;
+}
+.emp-chip-v2 {
+  background:var(--gp); border:1.5px solid var(--gl);
+  border-radius:20px; padding:6px 12px;
+  font-size:.75rem; font-weight:700; color:var(--t);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.emp-chip-v2 .chip-avatar {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--gd); color:white;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.7rem; font-weight:900;
+}
+.emp-chip-v2 .chip-shift { color:var(--m); font-size:.68rem; }
+
+.empty-v2 {
+  background:white; border-radius:var(--radius-md);
+  padding:32px 20px; text-align:center;
+  border:1.5px dashed var(--b4);
+}
+.empty-v2 .empty-icon { font-size:2.5rem; margin-bottom:8px; opacity:.5; }
+.empty-v2 .empty-txt { color:var(--m); font-size:.85rem; font-weight:700; }
+
+/* ---------- التقرير: فورم الاختيار المحسّن ---------- */
+.report-form-card {
+  background:linear-gradient(135deg, white 0%, var(--gp) 100%);
+  border-radius:var(--radius-lg);
+  padding:18px; margin-bottom:14px;
+  box-shadow:var(--shadow-md);
+  border:1.5px solid var(--gl);
+}
+.form-title-v2 {
+  font-weight:900; font-size:1rem; color:var(--gd);
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.form-title-v2 .form-icon {
+  width:34px; height:34px; border-radius:12px;
+  background:var(--gd); color:white;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+}
+
+.btn-hero {
+  background:linear-gradient(135deg,#6abf1e,#4e9012);
+  color:white; box-shadow:var(--shadow-green);
+  padding:14px 24px; border:none; border-radius:14px;
+  font-family:"Cairo",sans-serif; font-size:.95rem; font-weight:900;
+  cursor:pointer; transition:all .2s;
+  width:100%; margin-top:8px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-hero:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(78,144,18,.32); }
+.btn-hero:active { transform:translateY(0) scale(.98); }
+
+/* ---------- التقرير: أقسام الملخص المحسّنة ---------- */
+.rep-section-v2 {
+  background:white; border-radius:var(--radius-md);
+  padding:14px 14px 4px; margin-bottom:12px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--b3);
+}
+.rep-section-header {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:12px; padding-bottom:10px;
+  border-bottom:1.5px dashed var(--b3);
+}
+.rep-section-icon {
+  width:36px; height:36px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.05rem; flex-shrink:0;
+}
+.rep-section-icon.att { background:var(--gl); color:var(--gd); }
+.rep-section-icon.debt { background:var(--warn-l); color:var(--warn-d); }
+.rep-section-icon.overtime { background:var(--info-l); color:var(--info-d); }
+.rep-section-icon.absence { background:var(--rl); color:var(--r); }
+.rep-section-icon.advance { background:var(--purple-l); color:var(--purple); }
+.rep-section-name { font-weight:900; font-size:.95rem; color:var(--t); }
+.rep-section-sub { font-size:.7rem; color:var(--m); margin-top:1px; }
+
+.mini-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(110px, 1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
+.mini-stat {
+  background:#fbfcfa; border-radius:var(--radius-sm);
+  padding:12px 10px; text-align:center;
+  border:1.5px solid var(--b3);
+  transition:transform .18s;
+}
+.mini-stat:active { transform:scale(.98); }
+.mini-stat-num { font-size:1.35rem; font-weight:900; color:var(--t); line-height:1.1; margin-bottom:2px; }
+.mini-stat-lbl { font-size:.65rem; color:var(--m); font-weight:700; }
+.mini-stat.pos .mini-stat-num { color:var(--gd); }
+.mini-stat.neg .mini-stat-num { color:var(--r); }
+.mini-stat.warn .mini-stat-num { color:var(--warn-d); }
+.mini-stat.info .mini-stat-num { color:var(--info-d); }
+.mini-stat.pos { background:linear-gradient(135deg, white, var(--gl)); border-color:var(--g); }
+.mini-stat.neg { background:linear-gradient(135deg, white, var(--rl)); border-color:var(--r); }
+.mini-stat.warn { background:linear-gradient(135deg, white, var(--warn-l)); border-color:var(--warn); }
+
+/* ---------- التقرير: كشف المرتب النهائي (النجم) ---------- */
+.salary-card {
+  background:white; border-radius:var(--radius-lg);
+  overflow:hidden; box-shadow:var(--shadow-md);
+  border:1.5px solid var(--b3);
+  margin-bottom:14px;
+}
+.salary-header {
+  background:linear-gradient(135deg, var(--gd), var(--g));
+  color:white; padding:14px 16px;
+  display:flex; align-items:center; gap:10px;
+  position:relative; overflow:hidden;
+}
+.salary-header::after {
+  content:"💰"; position:absolute; left:-8px; top:50%;
+  transform:translateY(-50%) rotate(-15deg);
+  font-size:3.5rem; opacity:.15;
+}
+.salary-header-title {
+  font-weight:900; font-size:1rem; position:relative;
+}
+.salary-header-icon {
+  width:32px; height:32px; border-radius:10px;
+  background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem; position:relative;
+}
+
+.salary-line {
+  padding:14px 16px;
+  border-bottom:1px solid var(--b3);
+}
+.salary-line:last-child { border-bottom:none; }
+.salary-line-main {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:.9rem; font-weight:800;
+}
+.salary-line-title { display:flex; align-items:center; gap:8px; color:var(--t); }
+.salary-line-title-icon {
+  width:26px; height:26px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.75rem; font-weight:900; flex-shrink:0;
+}
+.salary-line.add .salary-line-title-icon { background:var(--gl); color:var(--gd); }
+.salary-line.sub .salary-line-title-icon { background:var(--rl); color:var(--r); }
+.salary-value { font-weight:900; font-size:1rem; white-space:nowrap; }
+.salary-line.add .salary-value { color:var(--gd); }
+.salary-line.sub .salary-value { color:var(--r); }
+
+.salary-details {
+  margin-top:10px; padding:10px 12px;
+  background:#fbfcfa; border-radius:var(--radius-sm);
+  font-size:.72rem;
+}
+.salary-detail-row {
+  display:flex; justify-content:space-between; gap:8px;
+  padding:5px 0; align-items:center;
+}
+.salary-detail-row + .salary-detail-row {
+  border-top:1px dashed var(--b3);
+}
+.salary-detail-lhs {
+  color:var(--m); font-weight:700; flex:1;
+  display:flex; align-items:center; gap:5px;
+}
+.salary-detail-lhs::before { content:"•"; color:var(--gd); font-weight:900; }
+.salary-detail-rhs {
+  color:var(--t); font-weight:800; white-space:nowrap; font-size:.73rem;
+}
+
+.salary-net {
+  padding:18px 16px;
+  background:linear-gradient(135deg, var(--gp), var(--gl));
+  display:flex; justify-content:space-between; align-items:center;
+  border-top:2px solid var(--g);
+}
+.salary-net-title {
+  font-weight:900; font-size:1.05rem; color:var(--gd);
+  display:flex; align-items:center; gap:10px;
+}
+.salary-net-icon {
+  width:34px; height:34px; border-radius:12px;
+  background:var(--gd); color:white;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+}
+.salary-net-value {
+  font-weight:900; font-size:1.35rem; color:var(--gd);
+  text-shadow:0 1px 2px rgba(78,144,18,.15);
+}
+
+/* ---------- التقرير: بطاقة عنوان الموظف ---------- */
+.emp-header-card {
+  background:linear-gradient(135deg, var(--gd), var(--g));
+  color:white; border-radius:var(--radius-lg);
+  padding:16px 18px; margin-bottom:12px;
+  box-shadow:var(--shadow-green);
+  display:flex; align-items:center; gap:14px;
+  position:relative; overflow:hidden;
+}
+.emp-header-card::before {
+  content:""; position:absolute; top:-30px; left:-20px;
+  width:120px; height:120px; border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.emp-avatar {
+  width:52px; height:52px; border-radius:50%;
+  background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; font-weight:900; flex-shrink:0;
+  border:2px solid rgba(255,255,255,.28);
+  position:relative;
+}
+.emp-header-info { flex:1; position:relative; }
+.emp-header-name { font-weight:900; font-size:1.05rem; margin-bottom:3px; }
+.emp-header-meta { font-size:.72rem; opacity:.92; font-weight:700; }
+
+/* ---------- تحسينات mobile-first ---------- */
+@media (max-width: 480px) {
+  body { padding:12px 12px 40px; }
+  .stats-grid { grid-template-columns:repeat(2, 1fr); gap:8px; }
+  .stat-card-v2 { padding:12px 10px; }
+  .stat-num-v2 { font-size:1.5rem; }
+  .stat-icon { width:32px; height:32px; font-size:1rem; }
+  .hero { padding:16px; }
+  .hero-title { font-size:1.05rem; }
+  .rep-section-v2 { padding:12px 12px 4px; }
+  .salary-header { padding:12px 14px; }
+  .salary-header-title { font-size:.92rem; }
+  .salary-line { padding:12px 14px; }
+  .salary-line-main { font-size:.85rem; }
+  .salary-value { font-size:.92rem; }
+  .salary-net { padding:16px 14px; }
+  .salary-net-value { font-size:1.2rem; }
+  .salary-net-title { font-size:.98rem; }
+  .emp-header-card { padding:14px; gap:12px; }
+  .emp-avatar { width:46px; height:46px; font-size:1.2rem; }
+  .emp-header-name { font-size:.98rem; }
+  .mini-stat { padding:10px 8px; }
+  .mini-stat-num { font-size:1.2rem; }
+  .mini-stat-lbl { font-size:.6rem; }
+}
+
+@media (min-width: 481px) {
+  .stats-grid { grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
+}
 </style>
 </head>
 <body>
@@ -335,37 +743,56 @@ input:checked + .slider:before { transform:translateX(-20px); }
   <button class="tab-btn" data-panel="month">🔒 قفل الشهر</button>
 </div>
 
-<!-- بند 18: شاشة الرئيسية (Home Dashboard) -->
+<!-- بند 18 + 37: شاشة الرئيسية المحسّنة (Home Dashboard v2) -->
 <div class="panel active" id="panel-home">
-  <div class="dash-cards">
-    <div class="dash-card safe">
-      <div class="dash-num" id="dashWorking">-</div>
-      <div class="dash-lbl">🟢 داخل الدوام الآن</div>
+  <!-- الهيدر الترحيبي -->
+  <div class="hero">
+    <button class="hero-refresh" onclick="loadDashboard()" title="تحديث">🔄</button>
+    <div class="hero-greeting" id="heroGreeting">مرحبًا</div>
+    <div class="hero-title">لوحة صاحب العمل</div>
+    <div class="hero-date" id="heroDate">جاري التحميل...</div>
+  </div>
+
+  <!-- كارتات الإحصائيات -->
+  <div class="stats-grid">
+    <div class="stat-card-v2 safe">
+      <div class="stat-icon">🟢</div>
+      <div class="stat-num-v2" id="dashWorking">-</div>
+      <div class="stat-lbl-v2">داخل الدوام الآن</div>
     </div>
-    <div class="dash-card danger">
-      <div class="dash-num" id="dashCheckedOut">-</div>
-      <div class="dash-lbl">🔴 انصرف اليوم</div>
+    <div class="stat-card-v2 info">
+      <div class="stat-icon">✓</div>
+      <div class="stat-num-v2" id="dashCheckedOut">-</div>
+      <div class="stat-lbl-v2">انصرف اليوم</div>
     </div>
-    <div class="dash-card neutral">
-      <div class="dash-num" id="dashTotal">-</div>
-      <div class="dash-lbl">📊 إجمالي حضور اليوم</div>
+    <div class="stat-card-v2 neutral">
+      <div class="stat-icon">📊</div>
+      <div class="stat-num-v2" id="dashTotal">-</div>
+      <div class="stat-lbl-v2">إجمالي حضور اليوم</div>
     </div>
-    <div class="dash-card debt">
-      <div class="dash-num" id="dashDebt">-</div>
-      <div class="dash-lbl">⏱️ إجمالي الدين المستحق (ساعة)</div>
+    <div class="stat-card-v2 warn">
+      <div class="stat-icon">⏱</div>
+      <div class="stat-num-v2" id="dashDebt">-</div>
+      <div class="stat-lbl-v2">إجمالي الدين (ساعة)</div>
     </div>
-    <div class="dash-card review">
-      <div class="dash-num" id="dashReview">-</div>
-      <div class="dash-lbl">⚠️ حالات تحتاج مراجعة</div>
+    <div class="stat-card-v2 danger">
+      <div class="stat-icon">⚠</div>
+      <div class="stat-num-v2" id="dashReview">-</div>
+      <div class="stat-lbl-v2">حالات تحتاج مراجعة</div>
     </div>
   </div>
 
+  <!-- التنبيهات الذكية -->
   <div id="alertBar"></div>
 
-  <div class="card">
-    <div class="stitle">الفروع الآن <button class="mini-btn" onclick="loadDashboard()">تحديث</button></div>
-    <div id="branchStatus"><div class="empty">جاري التحميل...</div></div>
+  <!-- الفروع النشطة -->
+  <div class="section-title">
+    <div class="section-title-txt">
+      <div class="section-title-icon">📍</div>
+      الفروع النشطة الآن
+    </div>
   </div>
+  <div id="branchStatus"><div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div></div>
 </div>
 
 <!-- بند 10 و7.3: يحتاج مراجعة -->
@@ -499,27 +926,31 @@ input:checked + .slider:before { transform:translateX(-20px); }
   </div>
 </div>
 
-<!-- بند 12: التقرير الشهري -->
+<!-- بند 12 + 37: التقرير الشهري المحسّن -->
 
 <div class="panel" id="panel-reports">
-  <div class="card">
-    <div class="stitle">تقرير المرتب الشهري المفصَّل (بند 23)</div>
-    <div class="row2">
-      <div class="fg">
-        <label>الموظف (بحث بالكود أو الاسم)</label>
-        <input type="text" id="repEmpSearch" placeholder="اكتب E001 أو اسم الموظف..." autocomplete="off" oninput="onReportEmpSearchInput()" onblur="setTimeout(hideReportEmpSuggestions, 200)">
-        <input type="hidden" id="repEmpId">
-        <div id="repEmpSuggestions" class="rep-suggestions" style="display:none;"></div>
-      </div>
-      <div class="fg">
-        <label>الفترة</label>
-        <div class="row2">
-          <select id="repYear" class="rep-select"></select>
-          <select id="repMonth" class="rep-select"></select>
-        </div>
+  <div class="report-form-card">
+    <div class="form-title-v2">
+      <div class="form-icon">📊</div>
+      تقرير المرتب الشهري المفصَّل
+    </div>
+    <div class="fg">
+      <label>الموظف (بحث بالكود أو الاسم)</label>
+      <input type="text" id="repEmpSearch" placeholder="اكتب E001 أو اسم الموظف..." autocomplete="off" oninput="onReportEmpSearchInput()" onblur="setTimeout(hideReportEmpSuggestions, 200)">
+      <input type="hidden" id="repEmpId">
+      <div id="repEmpSuggestions" class="rep-suggestions" style="display:none;"></div>
+    </div>
+    <div class="fg">
+      <label>الفترة</label>
+      <div class="row2">
+        <select id="repYear" class="rep-select"></select>
+        <select id="repMonth" class="rep-select"></select>
       </div>
     </div>
-    <button class="btn bng bfull" onclick="submitDetailedReport()">إنشاء التقرير 📊</button>
+    <button class="btn-hero" onclick="submitDetailedReport()">
+      <span>إنشاء التقرير</span>
+      <span>📈</span>
+    </button>
   </div>
 
   <div id="reportResult"></div>
@@ -581,12 +1012,34 @@ input:checked + .slider:before { transform:translateX(-20px); }
     });
   });
 
-  /** بند 18: تحميل وعرض شاشة الرئيسية (كروت + تنبيهات + حالة الفروع) */
+  /** بند 18 + 37: تحميل وعرض شاشة الرئيسية المحسّنة (كروت + تنبيهات + حالة الفروع) */
   function loadDashboard() {
-    document.getElementById('branchStatus').innerHTML = '<div class="empty">جاري التحميل...</div>';
+    updateHeroGreeting(); // تحديث التحية والتاريخ فورًا
+    document.getElementById('branchStatus').innerHTML = '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
     apiCall('dashboardSummary')
       .then(renderDashboard)
-      .catch(err => document.getElementById('branchStatus').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+      .catch(err => document.getElementById('branchStatus').innerHTML =
+        '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
+  }
+
+  /** بند 37: تحديث الشريط الترحيبي بالتحية المناسبة للوقت والتاريخ */
+  function updateHeroGreeting() {
+    const now = new Date();
+    const hour = now.getHours();
+    let greeting = 'مرحبًا';
+    if (hour < 12) greeting = 'صباح الخير';
+    else if (hour < 17) greeting = 'مرحبًا';
+    else if (hour < 21) greeting = 'مساء الخير';
+    else greeting = 'مساء الخير';
+
+    const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const dateStr = days[now.getDay()] + '، ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+
+    const g = document.getElementById('heroGreeting');
+    const d = document.getElementById('heroDate');
+    if (g) g.textContent = greeting;
+    if (d) d.textContent = dateStr;
   }
 
   function renderDashboard(data) {
@@ -596,33 +1049,57 @@ input:checked + .slider:before { transform:translateX(-20px); }
     document.getElementById('dashDebt').textContent = data.cards.totalDebtHours;
     document.getElementById('dashReview').textContent = data.cards.needsReviewCount;
 
+    // بند 37: تنبيهات بالتصميم الجديد
     const alertBar = document.getElementById('alertBar');
     if (!data.alerts || data.alerts.length === 0) {
       alertBar.innerHTML = '';
     } else {
-      let html = '<div class="alert-bar">';
+      const iconMap = { debt: '⏱', 'month-end': '📅', absence: '📋' };
+      let html = '<div class="alerts-v2">';
       data.alerts.forEach(a => {
-        html += '<div class="alert-item ' + a.type + '">' + a.message + '</div>';
+        const icon = iconMap[a.type] || '💡';
+        html += '<div class="alert-v2 ' + a.type + '">' +
+          '<div class="alert-icon-v2">' + icon + '</div>' +
+          '<div class="alert-msg-v2">' + a.message + '</div>' +
+        '</div>';
       });
       html += '</div>';
       alertBar.innerHTML = html;
     }
 
+    // بند 37: كارتات الفروع بالتصميم الجديد + Avatars
     const branchBox = document.getElementById('branchStatus');
     if (!data.branches || data.branches.length === 0) {
-      branchBox.innerHTML = '<div class="empty">مفيش أي موظف شغال دلوقتي ✅</div>';
+      branchBox.innerHTML = '<div class="empty-v2"><div class="empty-icon">🌙</div><div class="empty-txt">مفيش أي موظف شغال دلوقتي</div></div>';
     } else {
       let html = '';
       data.branches.forEach(b => {
-        html += '<div class="branch-block"><div class="branch-name">📍 ' + b.branch +
-          ' <span class="cnt">' + b.employees.length + '</span></div>';
+        html += '<div class="branch-card">' +
+          '<div class="branch-header">' +
+            '<div class="branch-name-v2">📍 ' + b.branch + '</div>' +
+            '<div class="branch-count">' + b.employees.length + ' موظف</div>' +
+          '</div>' +
+          '<div class="emp-list">';
         b.employees.forEach(e => {
-          html += '<span class="emp-chip">' + e.name + ' <span class="shift-tag">— ' + e.shift + '</span></span>';
+          const initials = getInitials(e.name);
+          html += '<span class="emp-chip-v2">' +
+            '<span class="chip-avatar">' + initials + '</span>' +
+            e.name +
+            ' <span class="chip-shift">— ' + e.shift + '</span>' +
+          '</span>';
         });
-        html += '</div>';
+        html += '</div></div>';
       });
       branchBox.innerHTML = html;
     }
+  }
+
+  /** بند 37: استخراج الأحرف الأولى من اسم الموظف لعرضها كصورة رمزية */
+  function getInitials(name) {
+    const parts = String(name || '').trim().split(/\s+/);
+    if (parts.length === 0) return '؟';
+    if (parts.length === 1) return parts[0].charAt(0);
+    return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
   }
 
   // ---- بند 19: سجل الحضور — تحميل مرة واحدة، فلترة محلية بالكامل ----
@@ -1188,120 +1665,185 @@ input:checked + .slider:before { transform:translateX(-20px); }
   }
 
   function renderDetailedReport(r) {
-    let html = '<div class="card">';
-    html += '<div class="stitle">' + r.employeeName + ' (' + r.employeeId + ') — ' + r.month + '/' + r.year + '</div>';
-
-    // أ. ملخص الحضور — بند 23 مُحدَّث: أُضيفت "عدد الشيفتات" منفصلة عن "أيام الحضور"
     const shiftsCount = (r.attendanceSummary.shiftsCount !== undefined) ? r.attendanceSummary.shiftsCount : r.attendanceSummary.daysWorked;
-    html += '<div class="rep-section-title">أ. ملخص الحضور</div>';
-    html += '<div class="rep-mini-cards">';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.daysWorked + '</div><div class="rep-mini-lbl">أيام حضور</div></div>';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + shiftsCount + '</div><div class="rep-mini-lbl">عدد الشيفتات</div></div>';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.attendanceSummary.totalHours + '</div><div class="rep-mini-lbl">إجمالي الساعات</div></div>';
-    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.lateCount + '</div><div class="rep-mini-lbl">مرات تأخير</div></div>';
-    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="rep-mini-lbl">انصراف مبكر</div></div>';
-    html += '</div>';
+    const monthNamesAr = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const monthLabel = monthNamesAr[r.month - 1] + ' ' + r.year;
+    const initials = getInitials(r.employeeName);
 
-    // ب. الدين والتعويض
-    html += '<div class="rep-section-title">ب. الدين والتعويض</div>';
-    html += '<div class="rep-mini-cards">';
-    html += '<div class="rep-mini-card warn"><div class="rep-mini-num">' + r.debtSummary.createdThisMonth + '</div><div class="rep-mini-lbl">دين نشأ هذا الشهر (ساعة)</div></div>';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.debtSummary.settledThisMonth + '</div><div class="rep-mini-lbl">تمت تغطيته بالأوفر تايم</div></div>';
-    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.debtSummary.remainingBalance + '</div><div class="rep-mini-lbl">الرصيد المتبقي (ساعة)</div></div>';
-    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.debtSummary.remainingDeduction + '</div><div class="rep-mini-lbl">قيمته المالية (ج.م)</div></div>';
-    html += '</div>';
+    let html = '';
 
-    // ج. الأوفر تايم المدفوع
-    html += '<div class="rep-section-title">ج. الأوفر تايم المدفوع</div>';
-    html += '<div class="rep-mini-cards">';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.overtimeSummary.paidHours + '</div><div class="rep-mini-lbl">ساعات مدفوعة</div></div>';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.overtimeSummary.paidAmount + '</div><div class="rep-mini-lbl">القيمة (ج.م)</div></div>';
-    html += '</div>';
+    // === بطاقة عنوان الموظف ===
+    html += '<div class="emp-header-card">' +
+      '<div class="emp-avatar">' + initials + '</div>' +
+      '<div class="emp-header-info">' +
+        '<div class="emp-header-name">' + r.employeeName + '</div>' +
+        '<div class="emp-header-meta">' + r.employeeId + ' — تقرير ' + monthLabel + '</div>' +
+      '</div>' +
+    '</div>';
 
-    // د. الغياب
-    html += '<div class="rep-section-title">د. الغياب</div>';
-    html += '<div class="rep-mini-cards">';
-    html += '<div class="rep-mini-card ok"><div class="rep-mini-num">' + r.absenceSummary.authorizedDays + '</div><div class="rep-mini-lbl">أيام غياب بإذن</div></div>';
-    html += '<div class="rep-mini-card danger"><div class="rep-mini-num">' + r.absenceSummary.unauthorizedDays + '</div><div class="rep-mini-lbl">أيام غياب بدون إذن</div></div>';
-    html += '</div>';
-
-    // هـ. السلف
-    html += '<div class="rep-section-title">هـ. السلف المعتمدة هذا الشهر</div>';
-    if (r.advances.length === 0) {
-      html += '<div class="empty" style="padding:14px;">لا توجد سلف معتمدة هذا الشهر</div>';
-    } else {
-      html += '<div class="rep-breakdown">';
-      r.advances.forEach(a => {
-        html += '<div class="rep-adv-row"><span>' + a.date + (a.reason ? ' — ' + a.reason : '') + '</span><span>' + a.amount.toLocaleString() + ' ج.م</span></div>';
-      });
-      html += '</div>';
-    }
-
-    html += '</div>'; // end card
-
-    // و. كشف المرتب النهائي — بند 23 مُحدَّث: تفاصيل توضيحية تحت كل بند
-    html += '<div class="card">';
-    html += '<div class="stitle">و. كشف المرتب النهائي</div>';
-    html += '<div class="rep-breakdown">';
-
-    // + المرتب الأساسي (مع تفاصيل الفروع/الشيفتات لو موجودة)
-    html += '<div class="rep-line add"><span>+ المرتب الأساسي</span><span class="rep-val">' + r.breakdown.baseSalary.toLocaleString() + ' ج.م</span></div>';
-    if (r.breakdown.baseSalaryBreakdown && r.breakdown.baseSalaryBreakdown.length > 0) {
-      html += '<div class="rep-detail-list">';
-      r.breakdown.baseSalaryBreakdown.forEach(g => {
-        const rateFormatted = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
-        html += '<div class="rep-detail-row">' +
-          '<span class="rep-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
-          '<span class="rep-detail-rhs">' + g.hours + ' ساعة × ' + rateFormatted + ' = ' + g.subtotal.toLocaleString() + ' ج.م</span>' +
-          '</div>';
-      });
-      html += '</div>';
-    }
-
-    // + الأوفر تايم المدفوع (مع تفاصيل المعادلة لو مبلغ > 0)
-    html += '<div class="rep-line add"><span>+ الأوفر تايم المدفوع</span><span class="rep-val">' + r.breakdown.overtimePaid.toLocaleString() + ' ج.م</span></div>';
-    if (r.breakdown.overtimeBreakdown && r.breakdown.overtimeBreakdown.length > 0) {
-      html += '<div class="rep-detail-list">';
-      r.breakdown.overtimeBreakdown.forEach(g => {
-        const rateFormatted = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
-        html += '<div class="rep-detail-row">' +
-          '<span class="rep-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
-          '<span class="rep-detail-rhs">' + g.hours + ' ساعة × ' + rateFormatted + ' × ' + g.multiplier + ' = ' + g.subtotal.toLocaleString() + ' ج.م</span>' +
-          '</div>';
-      });
-      html += '</div>';
-    }
-
-    // − خصم دين الوقت المتبقي (مع تفاصيل FIFO لو الرصيد > 0)
-    html += '<div class="rep-line sub"><span>− خصم دين الوقت المتبقي</span><span class="rep-val">' + r.breakdown.debtDeduction.toLocaleString() + ' ج.م</span></div>';
-    if (r.breakdown.debtDeductionBreakdown && r.breakdown.debtDeductionBreakdown.length > 0) {
-      html += '<div class="rep-detail-list">';
-      r.breakdown.debtDeductionBreakdown.forEach(chunk => {
-        const rateFormatted = (Math.round(chunk.hourlyRate * 100) / 100).toLocaleString();
-        html += '<div class="rep-detail-row">' +
-          '<span class="rep-detail-lhs">جزء متبقي (FIFO)</span>' +
-          '<span class="rep-detail-rhs">' + chunk.hours + ' ساعة × ' + rateFormatted + ' = ' + chunk.subtotal.toLocaleString() + ' ج.م</span>' +
-          '</div>';
-      });
-      html += '</div>';
-    }
-
-    // − خصم السلف المعتمدة (مع تفاصيل السلف لو فيه)
-    html += '<div class="rep-line sub"><span>− خصم السلف المعتمدة</span><span class="rep-val">' + r.breakdown.advanceDeduction.toLocaleString() + ' ج.م</span></div>';
-    if (r.advances && r.advances.length > 0) {
-      html += '<div class="rep-detail-list">';
-      r.advances.forEach(a => {
-        html += '<div class="rep-detail-row">' +
-          '<span class="rep-detail-lhs">سلفة ' + a.date + '</span>' +
-          '<span class="rep-detail-rhs">' + a.amount.toLocaleString() + ' ج.م</span>' +
-          '</div>';
-      });
-      html += '</div>';
-    }
-
-    // = صافي المرتب
-    html += '<div class="rep-line net"><span>= صافي المرتب</span><span class="rep-val">' + r.breakdown.netSalary.toLocaleString() + ' ج.م</span></div>';
+    // === أ. ملخص الحضور ===
+    html += '<div class="rep-section-v2">';
+    html += '<div class="rep-section-header">' +
+      '<div class="rep-section-icon att">📋</div>' +
+      '<div><div class="rep-section-name">ملخص الحضور</div>' +
+      '<div class="rep-section-sub">أيام العمل، الشيفتات، والساعات المسجّلة</div></div>' +
+    '</div>';
+    html += '<div class="mini-grid">';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.attendanceSummary.daysWorked + '</div><div class="mini-stat-lbl">أيام حضور</div></div>';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + shiftsCount + '</div><div class="mini-stat-lbl">عدد الشيفتات</div></div>';
+    html += '<div class="mini-stat info"><div class="mini-stat-num">' + r.attendanceSummary.totalHours + '</div><div class="mini-stat-lbl">إجمالي الساعات</div></div>';
+    html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.lateCount + '</div><div class="mini-stat-lbl">مرات تأخير</div></div>';
+    html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="mini-stat-lbl">انصراف مبكر</div></div>';
     html += '</div></div>';
+
+    // === ب. الدين والتعويض ===
+    html += '<div class="rep-section-v2">';
+    html += '<div class="rep-section-header">' +
+      '<div class="rep-section-icon debt">⏱</div>' +
+      '<div><div class="rep-section-name">الدين والتعويض</div>' +
+      '<div class="rep-section-sub">الدين الناشئ، التغطية بالأوفر تايم، والرصيد المتبقي</div></div>' +
+    '</div>';
+    html += '<div class="mini-grid">';
+    html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.debtSummary.createdThisMonth + '</div><div class="mini-stat-lbl">دين نشأ (ساعة)</div></div>';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.debtSummary.settledThisMonth + '</div><div class="mini-stat-lbl">تمت تغطيته</div></div>';
+    html += '<div class="mini-stat neg"><div class="mini-stat-num">' + r.debtSummary.remainingBalance + '</div><div class="mini-stat-lbl">الرصيد المتبقي</div></div>';
+    html += '<div class="mini-stat neg"><div class="mini-stat-num">' + r.debtSummary.remainingDeduction + '</div><div class="mini-stat-lbl">قيمته المالية (ج.م)</div></div>';
+    html += '</div></div>';
+
+    // === ج. الأوفر تايم المدفوع ===
+    html += '<div class="rep-section-v2">';
+    html += '<div class="rep-section-header">' +
+      '<div class="rep-section-icon overtime">🚀</div>' +
+      '<div><div class="rep-section-name">الأوفر تايم المدفوع</div>' +
+      '<div class="rep-section-sub">الساعات الإضافية التي لم تُستخدم في تغطية الدين</div></div>' +
+    '</div>';
+    html += '<div class="mini-grid">';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.overtimeSummary.paidHours + '</div><div class="mini-stat-lbl">ساعات مدفوعة</div></div>';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.overtimeSummary.paidAmount + '</div><div class="mini-stat-lbl">القيمة (ج.م)</div></div>';
+    html += '</div></div>';
+
+    // === د. الغياب ===
+    html += '<div class="rep-section-v2">';
+    html += '<div class="rep-section-header">' +
+      '<div class="rep-section-icon absence">📅</div>' +
+      '<div><div class="rep-section-name">الغياب</div>' +
+      '<div class="rep-section-sub">أيام الغياب بإذن وبدون إذن</div></div>' +
+    '</div>';
+    html += '<div class="mini-grid">';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.absenceSummary.authorizedDays + '</div><div class="mini-stat-lbl">أيام بإذن</div></div>';
+    html += '<div class="mini-stat neg"><div class="mini-stat-num">' + r.absenceSummary.unauthorizedDays + '</div><div class="mini-stat-lbl">أيام بدون إذن</div></div>';
+    html += '</div></div>';
+
+    // === هـ. السلف ===
+    html += '<div class="rep-section-v2">';
+    html += '<div class="rep-section-header">' +
+      '<div class="rep-section-icon advance">💵</div>' +
+      '<div><div class="rep-section-name">السلف المعتمدة هذا الشهر</div>' +
+      '<div class="rep-section-sub">السلف التي أُقرّت داخل الشهر (حسب تاريخ الموافقة)</div></div>' +
+    '</div>';
+    if (r.advances.length === 0) {
+      html += '<div class="empty-v2" style="padding:18px;"><div class="empty-icon">✅</div><div class="empty-txt">لا توجد سلف معتمدة هذا الشهر</div></div>';
+    } else {
+      html += '<div style="background:#fbfcfa; border-radius:10px; padding:6px 12px;">';
+      r.advances.forEach(a => {
+        html += '<div class="salary-detail-row">' +
+          '<span class="salary-detail-lhs">' + a.date + (a.reason ? ' — ' + a.reason : '') + '</span>' +
+          '<span class="salary-detail-rhs">' + a.amount.toLocaleString() + ' ج.م</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // === و. كشف المرتب النهائي (النجم) ===
+    html += '<div class="salary-card">';
+    html += '<div class="salary-header">' +
+      '<div class="salary-header-icon">💰</div>' +
+      '<div class="salary-header-title">كشف المرتب النهائي</div>' +
+    '</div>';
+
+    // + المرتب الأساسي
+    html += '<div class="salary-line add">' +
+      '<div class="salary-line-main">' +
+        '<div class="salary-line-title"><div class="salary-line-title-icon">+</div>المرتب الأساسي</div>' +
+        '<div class="salary-value">' + r.breakdown.baseSalary.toLocaleString() + ' ج.م</div>' +
+      '</div>';
+    if (r.breakdown.baseSalaryBreakdown && r.breakdown.baseSalaryBreakdown.length > 0) {
+      html += '<div class="salary-details">';
+      r.breakdown.baseSalaryBreakdown.forEach(g => {
+        const rate = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="salary-detail-row">' +
+          '<span class="salary-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
+          '<span class="salary-detail-rhs">' + g.hours + ' × ' + rate + ' = ' + g.subtotal.toLocaleString() + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // + الأوفر تايم المدفوع
+    html += '<div class="salary-line add">' +
+      '<div class="salary-line-main">' +
+        '<div class="salary-line-title"><div class="salary-line-title-icon">+</div>الأوفر تايم المدفوع</div>' +
+        '<div class="salary-value">' + r.breakdown.overtimePaid.toLocaleString() + ' ج.م</div>' +
+      '</div>';
+    if (r.breakdown.overtimeBreakdown && r.breakdown.overtimeBreakdown.length > 0) {
+      html += '<div class="salary-details">';
+      r.breakdown.overtimeBreakdown.forEach(g => {
+        const rate = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="salary-detail-row">' +
+          '<span class="salary-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
+          '<span class="salary-detail-rhs">' + g.hours + ' × ' + rate + ' × ' + g.multiplier + ' = ' + g.subtotal.toLocaleString() + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // − خصم دين الوقت المتبقي
+    html += '<div class="salary-line sub">' +
+      '<div class="salary-line-main">' +
+        '<div class="salary-line-title"><div class="salary-line-title-icon">−</div>خصم دين الوقت المتبقي</div>' +
+        '<div class="salary-value">' + r.breakdown.debtDeduction.toLocaleString() + ' ج.م</div>' +
+      '</div>';
+    if (r.breakdown.debtDeductionBreakdown && r.breakdown.debtDeductionBreakdown.length > 0) {
+      html += '<div class="salary-details">';
+      r.breakdown.debtDeductionBreakdown.forEach(chunk => {
+        const rate = (Math.round(chunk.hourlyRate * 100) / 100).toLocaleString();
+        html += '<div class="salary-detail-row">' +
+          '<span class="salary-detail-lhs">جزء متبقي (FIFO)</span>' +
+          '<span class="salary-detail-rhs">' + chunk.hours + ' × ' + rate + ' = ' + chunk.subtotal.toLocaleString() + '</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // − خصم السلف المعتمدة
+    html += '<div class="salary-line sub">' +
+      '<div class="salary-line-main">' +
+        '<div class="salary-line-title"><div class="salary-line-title-icon">−</div>خصم السلف المعتمدة</div>' +
+        '<div class="salary-value">' + r.breakdown.advanceDeduction.toLocaleString() + ' ج.م</div>' +
+      '</div>';
+    if (r.advances && r.advances.length > 0) {
+      html += '<div class="salary-details">';
+      r.advances.forEach(a => {
+        html += '<div class="salary-detail-row">' +
+          '<span class="salary-detail-lhs">سلفة ' + a.date + '</span>' +
+          '<span class="salary-detail-rhs">' + a.amount.toLocaleString() + ' ج.م</span>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // = صافي المرتب (البطل)
+    html += '<div class="salary-net">' +
+      '<div class="salary-net-title"><div class="salary-net-icon">✓</div>صافي المرتب</div>' +
+      '<div class="salary-net-value">' + r.breakdown.netSalary.toLocaleString() + ' ج.م</div>' +
+    '</div>';
+
+    html += '</div>'; // end salary-card
 
     document.getElementById('reportResult').innerHTML = html;
   }
