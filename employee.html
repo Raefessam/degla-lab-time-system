@@ -43,6 +43,180 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .hdr h1 { color:var(--gd); font-size:1rem; font-weight:900; margin:0; }
 .hdr p  { color:var(--m); font-size:.72rem; margin:2px 0 0; }
 
+/* ══════════════════════════════════════════════════════════
+   بند 37: التحسينات البصرية الشاملة لشاشة الموظف
+   نفس اللغة البصرية لشاشة صاحب العمل (admin.html)
+   ══════════════════════════════════════════════════════════ */
+
+/* ---------- الهيدر البراند (لوجو + DEGLA SMART LAB) ---------- */
+.brand-header {
+    background:linear-gradient(135deg, #4e9012 0%, #6abf1e 100%);
+    color:white; border-radius:18px;
+    padding:14px 18px; margin:12px; margin-bottom:6px;
+    box-shadow:0 6px 18px rgba(78,144,18,.22);
+    display:flex; align-items:center; gap:14px;
+    position:relative; overflow:hidden;
+    align-self:stretch;
+}
+.brand-header::before {
+    content:""; position:absolute; top:-30px; left:-25px;
+    width:130px; height:130px; border-radius:50%;
+    background:rgba(255,255,255,.07); pointer-events:none;
+}
+.brand-header::after {
+    content:""; position:absolute; bottom:-40px; right:-30px;
+    width:110px; height:110px; border-radius:50%;
+    background:rgba(255,255,255,.05); pointer-events:none;
+}
+.brand-logo-wrap {
+    width:52px; height:52px; border-radius:50%;
+    background:white;
+    display:flex; align-items:center; justify-content:center;
+    padding:6px; flex-shrink:0;
+    box-shadow:0 4px 12px rgba(0,0,0,.14);
+    position:relative; z-index:1;
+}
+.brand-logo-img {
+    width:100%; height:100%; object-fit:contain; border-radius:50%;
+}
+.brand-text { flex:1; min-width:0; position:relative; z-index:1; }
+.brand-name {
+    font-weight:900; font-size:1rem;
+    letter-spacing:1.2px; line-height:1.1;
+    font-family:"Cairo", sans-serif;
+}
+.brand-tag {
+    font-size:.72rem; opacity:.92; font-weight:700;
+    margin-top:3px;
+}
+
+/* ---------- الساعة الحية المحسّنة ---------- */
+.clock-hero {
+    background:white; border-radius:18px;
+    padding:14px; margin:6px 12px 12px;
+    text-align:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+    border:1.5px solid var(--gl);
+}
+.clock-hero-time {
+    font-size:2rem; font-weight:900;
+    color:var(--gd); font-family:monospace;
+    letter-spacing:3px; line-height:1;
+    background:linear-gradient(135deg, #6abf1e, #4e9012);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+}
+.clock-hero-date {
+    font-size:.72rem; color:var(--m); font-weight:700;
+    margin-top:6px;
+}
+
+/* ---------- كارت الموظف المحسّن (Hero) ---------- */
+.emp-hero {
+    background:linear-gradient(135deg, var(--gd), var(--g));
+    color:white; border-radius:18px;
+    padding:16px; margin:0 0 12px;
+    display:flex; align-items:center; gap:14px;
+    box-shadow:0 6px 18px rgba(78,144,18,.22);
+    position:relative; overflow:hidden;
+}
+.emp-hero::before {
+    content:""; position:absolute; top:-30px; left:-25px;
+    width:120px; height:120px; border-radius:50%;
+    background:rgba(255,255,255,.08); pointer-events:none;
+}
+.emp-hero-avatar {
+    width:56px; height:56px; border-radius:50%;
+    background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+    color:white; font-size:1.35rem; font-weight:900;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; border:2px solid rgba(255,255,255,.28);
+    position:relative; z-index:1;
+}
+.emp-hero-info { flex:1; min-width:0; position:relative; z-index:1; }
+.emp-hero-name { font-weight:900; font-size:1rem; margin-bottom:2px; }
+.emp-hero-id { font-size:.72rem; opacity:.9; font-weight:700; }
+
+/* ---------- الأزرار الرئيسية للحضور والانصراف (v2) ---------- */
+.att-btn-hero {
+    width:100%; padding:20px; border:none; border-radius:16px;
+    font-family:"Cairo", sans-serif; font-size:1.05rem; font-weight:900;
+    cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    color:white; position:relative; overflow:hidden;
+}
+.att-btn-hero::before {
+    content:""; position:absolute; top:-30px; left:-20px;
+    width:100px; height:100px; border-radius:50%;
+    background:rgba(255,255,255,.12);
+}
+.att-btn-hero-in {
+    background:linear-gradient(135deg, #6abf1e, #4e9012);
+    box-shadow:0 6px 20px rgba(78,144,18,.35);
+}
+.att-btn-hero-out {
+    background:linear-gradient(135deg, #e53935, #c62828);
+    box-shadow:0 6px 20px rgba(229,57,53,.35);
+}
+.att-btn-hero:active { transform:translateY(1px) scale(.98); }
+.att-btn-hero-icon {
+    font-size:1.4rem; position:relative; z-index:1;
+}
+.att-btn-hero-txt { position:relative; z-index:1; }
+
+/* ---------- أزرار القائمة الرئيسية (تحت الحضور) ---------- */
+.menu-btn-v2 {
+    width:100%; padding:14px 16px;
+    background:white; border:1.5px solid var(--b3);
+    border-radius:14px;
+    font-family:"Cairo", sans-serif; font-size:.9rem; font-weight:800;
+    color:var(--t); cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:10px; text-align:right;
+}
+.menu-btn-v2:hover { border-color:var(--g); background:var(--gp); }
+.menu-btn-v2:active { transform:scale(.98); }
+.menu-btn-v2:last-child { margin-bottom:0; }
+.menu-btn-v2-icon {
+    width:36px; height:36px; border-radius:12px;
+    background:var(--gl); color:var(--gd);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; flex-shrink:0;
+}
+.menu-btn-v2-txt { flex:1; }
+.menu-btn-v2-arrow { color:var(--m); font-size:.8rem; opacity:.5; }
+.menu-btn-v2.exit .menu-btn-v2-icon { background:var(--rl); color:var(--r); }
+
+/* ---------- كارت تسجيل الدخول (Login) المحسّن ---------- */
+.login-hero {
+    background:white; border-radius:18px;
+    padding:22px 18px; margin:0 12px;
+    box-shadow:0 4px 16px rgba(0,0,0,.06);
+    border:1.5px solid var(--b3);
+}
+.login-hero-title {
+    text-align:center; margin-bottom:16px;
+}
+.login-hero-icon {
+    width:56px; height:56px; border-radius:16px;
+    background:linear-gradient(135deg, var(--gd), var(--g));
+    color:white; margin:0 auto 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+    box-shadow:0 4px 12px rgba(78,144,18,.28);
+}
+.login-hero-heading {
+    font-weight:900; font-size:1.1rem;
+    color:var(--t); margin-bottom:3px;
+}
+.login-hero-sub {
+    font-size:.75rem; color:var(--m); font-weight:700;
+}
+
+/* ---------- تحسين مسافات ومظهر شاشة الموظف ---------- */
+.step { max-width:520px; width:100%; padding:0 12px; }
+
 .step { width:100%; max-width:420px; padding:14px; }
 .card { background:white; border-radius:20px; padding:18px; margin-bottom:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1.5px solid var(--b3); }
 .stitle { font-weight:900; font-size:.95rem; color:var(--t); margin-bottom:14px; }
@@ -187,15 +361,25 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   <div class="spdots"><div class="spdot"></div><div class="spdot"></div><div class="spdot"></div></div>
 </div>
 
-<div class="hdr">
-  <h1>🏢 دجله لاب</h1>
-  <p>نظام الحضور والانصراف — النسخة الجديدة</p>
+<!-- بند 37: الهيدر البراند الجديد — لوجو + اسم إنجليزي -->
+<div class="brand-header">
+  <div class="brand-logo-wrap">
+    <img src="logo.png" alt="Degla Smart Lab" class="brand-logo-img"/>
+  </div>
+  <div class="brand-text">
+    <div class="brand-name">DEGLA SMART LAB</div>
+    <div class="brand-tag">شاشة الموظف</div>
+  </div>
 </div>
 
 <div class="step">
 
-  <div class="card" id="loginCard">
-    <div class="stitle">🔐 تحقق من هويتك</div>
+  <div class="login-hero" id="loginCard">
+    <div class="login-hero-title">
+      <div class="login-hero-icon">🔐</div>
+      <div class="login-hero-heading">تحقق من هويتك</div>
+      <div class="login-hero-sub">ادخل اسمك الثلاثي وكود الموظف</div>
+    </div>
     <div class="fg">
       <label>الاسم الثلاثي بالعربي</label>
       <input type="text" id="employeeName" placeholder="أحمد محمد علي"/>
@@ -204,23 +388,34 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
       <label>كود الموظف</label>
       <input type="text" id="employeeId" placeholder="E001" style="text-transform:uppercase;"/>
     </div>
-    <button class="btn bng" id="loginBtn" onclick="loadStatus()">تحقق من الهوية</button>
+    <button class="att-btn-hero att-btn-hero-in" id="loginBtn" onclick="loadStatus()">
+      <span class="att-btn-hero-icon">✓</span>
+      <span class="att-btn-hero-txt">تحقق من الهوية</span>
+    </button>
   </div>
 
   <div id="mainCard" style="display:none;">
 
-    <div class="clock" id="clockDisp">00:00:00</div>
+    <!-- الساعة الحية بشكل بارز -->
+    <div class="clock-hero">
+      <div class="clock-hero-time" id="clockDisp">00:00:00</div>
+      <div class="clock-hero-date" id="clockDate">جاري التحميل...</div>
+    </div>
 
-    <div class="emp-card">
-      <div class="emp-avatar" id="empAvatar">؟</div>
-      <div class="emp-name" id="empName">جاري التحميل...</div>
+    <!-- بطاقة الموظف كـHero Card -->
+    <div class="emp-hero">
+      <div class="emp-hero-avatar" id="empAvatar">؟</div>
+      <div class="emp-hero-info">
+        <div class="emp-hero-name" id="empName">جاري التحميل...</div>
+        <div class="emp-hero-id" id="empIdDisp"></div>
+      </div>
     </div>
 
     <div id="indicatorBox"></div>
     <div id="workingBadgeBox"></div>
 
     <div class="card" id="checkinCard">
-      <div class="stitle">تسجيل حضور</div>
+      <div class="stitle">🕐 تسجيل حضور</div>
       <div class="fg">
         <label>الفرع</label>
         <select id="branch" onchange="updateTimingBadge()">
@@ -237,24 +432,42 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         </select>
       </div>
       <div id="timingBadge"></div>
-      <div class="att-btns">
-        <button class="att-in" id="checkinBtn" onclick="doCheckIn()">✅ تسجيل حضور</button>
-      </div>
+      <button class="att-btn-hero att-btn-hero-in" id="checkinBtn" onclick="doCheckIn()">
+        <span class="att-btn-hero-icon">✅</span>
+        <span class="att-btn-hero-txt">تسجيل حضور</span>
+      </button>
     </div>
 
     <div class="card" id="checkoutCard" style="display:none;">
-      <div class="att-btns">
-        <button class="att-out" id="checkoutBtn" onclick="doCheckOut()">🚪 تسجيل انصراف</button>
-      </div>
+      <button class="att-btn-hero att-btn-hero-out" id="checkoutBtn" onclick="doCheckOut()">
+        <span class="att-btn-hero-icon">🚪</span>
+        <span class="att-btn-hero-txt">تسجيل انصراف</span>
+      </button>
     </div>
 
     <div class="result-box" id="resultBox"></div>
 
     <div class="card" id="mainMenuCard">
-      <button class="btn bno bfull" onclick="openMonthlyHistory()">📊 السجل الشهري</button>
-      <button class="btn bno bfull" style="margin-top:10px;" onclick="toggleRequestPanel()">📋 طلب سلفة / إذن</button>
-      <button class="btn bno bfull" style="margin-top:10px;" onclick="openMyRequests()">🗂️ طلباتي</button>
-      <button class="btn bno bfull" style="margin-top:10px;" onclick="logoutEmployee()">🔙 رجوع</button>
+      <button class="menu-btn-v2" onclick="openMonthlyHistory()">
+        <span class="menu-btn-v2-icon">📊</span>
+        <span class="menu-btn-v2-txt">السجل الشهري</span>
+        <span class="menu-btn-v2-arrow">›</span>
+      </button>
+      <button class="menu-btn-v2" onclick="toggleRequestPanel()">
+        <span class="menu-btn-v2-icon">📋</span>
+        <span class="menu-btn-v2-txt">طلب سلفة / إذن</span>
+        <span class="menu-btn-v2-arrow">›</span>
+      </button>
+      <button class="menu-btn-v2" onclick="openMyRequests()">
+        <span class="menu-btn-v2-icon">🗂️</span>
+        <span class="menu-btn-v2-txt">طلباتي</span>
+        <span class="menu-btn-v2-arrow">›</span>
+      </button>
+      <button class="menu-btn-v2 exit" onclick="logoutEmployee()">
+        <span class="menu-btn-v2-icon">🚪</span>
+        <span class="menu-btn-v2-txt">تسجيل خروج</span>
+        <span class="menu-btn-v2-arrow">›</span>
+      </button>
     </div>
 
     <div class="card" id="requestPanel" style="display:none;">
@@ -438,7 +651,11 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
   function renderStatus(status) {
     currentStatus = status;
     document.getElementById('empName').textContent = status.name;
-    document.getElementById('empAvatar').textContent = status.name ? status.name.charAt(0) : '؟';
+    // بند 37: عرض كود الموظف تحت الاسم في الـHero Card
+    const idEl = document.getElementById('empIdDisp');
+    if (idEl) idEl.textContent = status.employeeId || '';
+    // Avatar بالأحرف الأولى (زي admin) بدل حرف واحد
+    document.getElementById('empAvatar').textContent = status.name ? getInitialsEmp(status.name) : '؟';
 
     let indicatorHtml = '';
     if (status.currentDebtHours > 0 && status.debtStatus === 'معلَّق') {
@@ -586,7 +803,24 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     const now = new Date();
     const cairoTime = now.toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', second: '2-digit' });
     document.getElementById('clockDisp').textContent = cairoTime;
+
+    // بند 37: عرض التاريخ بالعربية تحت الساعة
+    const dateEl = document.getElementById('clockDate');
+    if (dateEl) {
+      const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      dateEl.textContent = days[now.getDay()] + '، ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+    }
+
     updateTimingBadge(); // بند 28: تحديث شريط التنبيه كل ثانية مع الساعة
+  }
+
+  /** بند 37: استخراج الأحرف الأولى من الاسم كصورة رمزية (زي admin) */
+  function getInitialsEmp(name) {
+    const parts = String(name || '').trim().split(/\s+/);
+    if (parts.length === 0) return '؟';
+    if (parts.length === 1) return parts[0].charAt(0);
+    return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
   }
 
   // ---- بند 28: شريط التنبيه اللحظي (تأخير/تقدُّم/في الموعد) — مطابق R1 ----
