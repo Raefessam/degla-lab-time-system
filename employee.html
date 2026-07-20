@@ -53,6 +53,8 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     background:linear-gradient(135deg, #4e9012 0%, #6abf1e 100%);
     color:white; border-radius:18px;
     padding:14px 18px; margin:12px; margin-bottom:6px;
+    /* بند 37 fix: مساحة أمان لأجهزة iPhone اللي فيها notch */
+    margin-top:calc(12px + env(safe-area-inset-top, 0px));
     box-shadow:0 6px 18px rgba(78,144,18,.22);
     display:flex; align-items:center; gap:14px;
     position:relative; overflow:hidden;
@@ -165,28 +167,36 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 }
 .att-btn-hero-txt { position:relative; z-index:1; }
 
-/* ---------- أزرار القائمة الرئيسية (تحت الحضور) ---------- */
+/* ---------- أزرار القائمة الرئيسية (تحت الحضور) — كروت مستقلة ---------- */
 .menu-btn-v2 {
     width:100%; padding:14px 16px;
     background:white; border:1.5px solid var(--b3);
-    border-radius:14px;
+    border-radius:16px;
     font-family:"Cairo", sans-serif; font-size:.9rem; font-weight:800;
     color:var(--t); cursor:pointer; transition:all .2s;
     display:flex; align-items:center; gap:12px;
     margin-bottom:10px; text-align:right;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
 }
-.menu-btn-v2:hover { border-color:var(--g); background:var(--gp); }
+.menu-btn-v2:hover { border-color:var(--g); background:var(--gp); box-shadow:0 4px 12px rgba(78,144,18,.12); }
 .menu-btn-v2:active { transform:scale(.98); }
 .menu-btn-v2:last-child { margin-bottom:0; }
 .menu-btn-v2-icon {
-    width:36px; height:36px; border-radius:12px;
+    width:38px; height:38px; border-radius:12px;
     background:var(--gl); color:var(--gd);
     display:flex; align-items:center; justify-content:center;
     font-size:1rem; flex-shrink:0;
 }
 .menu-btn-v2-txt { flex:1; }
-.menu-btn-v2-arrow { color:var(--m); font-size:.8rem; opacity:.5; }
+.menu-btn-v2-arrow { color:var(--m); font-size:1rem; opacity:.4; font-weight:900; }
+.menu-btn-v2.exit { border-color:var(--rl); }
 .menu-btn-v2.exit .menu-btn-v2-icon { background:var(--rl); color:var(--r); }
+.menu-btn-v2.exit:hover { border-color:var(--r); background:#fef5f5; box-shadow:0 4px 12px rgba(229,57,53,.12); }
+
+/* حاوية الأزرار — بدون خلفية أو حدود، بس مسافة من فوق */
+.menu-container {
+    margin-top:12px;
+}
 
 /* ---------- كارت تسجيل الدخول (Login) المحسّن ---------- */
 .login-hero {
@@ -447,26 +457,26 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
     <div class="result-box" id="resultBox"></div>
 
-    <div class="card" id="mainMenuCard">
+    <div class="menu-container" id="mainMenuCard">
       <button class="menu-btn-v2" onclick="openMonthlyHistory()">
         <span class="menu-btn-v2-icon">📊</span>
         <span class="menu-btn-v2-txt">السجل الشهري</span>
-        <span class="menu-btn-v2-arrow">›</span>
+        <span class="menu-btn-v2-arrow">‹</span>
       </button>
       <button class="menu-btn-v2" onclick="toggleRequestPanel()">
         <span class="menu-btn-v2-icon">📋</span>
         <span class="menu-btn-v2-txt">طلب سلفة / إذن</span>
-        <span class="menu-btn-v2-arrow">›</span>
+        <span class="menu-btn-v2-arrow">‹</span>
       </button>
       <button class="menu-btn-v2" onclick="openMyRequests()">
         <span class="menu-btn-v2-icon">🗂️</span>
         <span class="menu-btn-v2-txt">طلباتي</span>
-        <span class="menu-btn-v2-arrow">›</span>
+        <span class="menu-btn-v2-arrow">‹</span>
       </button>
       <button class="menu-btn-v2 exit" onclick="logoutEmployee()">
         <span class="menu-btn-v2-icon">🚪</span>
         <span class="menu-btn-v2-txt">تسجيل خروج</span>
-        <span class="menu-btn-v2-arrow">›</span>
+        <span class="menu-btn-v2-arrow">‹</span>
       </button>
     </div>
 
