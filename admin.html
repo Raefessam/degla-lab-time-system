@@ -1299,16 +1299,6 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   <div id="reportResult"></div>
 </div>
 
-<!-- بند 6: قفل الشهر -->
-<div class="panel" id="panel-month">
-  <div class="card">
-    <div class="stitle">قفل الشهر (بند 6)</div>
-    <div class="shint">هذا الإجراء يحول أي دين وقت متبقٍ لكل الموظفين إلى خصم مالي فوري، دون أي مهلة إضافية، ولا يمكن التراجع عنه.</div>
-    <button class="btn br bfull" onclick="submitCloseMonth()">🔒 قفل الشهر الآن</button>
-    <div id="closeMonthResult" style="margin-top:12px;"></div>
-  </div>
-</div>
-
 <div class="footer">Infinite Systems — دجله لاب</div>
 
 <script>
@@ -2333,26 +2323,6 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     document.getElementById('reportResult').innerHTML = html;
   }
 
-  function submitCloseMonth() {
-    if (!confirm('متأكد إنك عايز تقفل الشهر؟ الإجراء ده نهائي ومش هينفع تتراجع عنه.')) return;
-    document.getElementById('closeMonthResult').innerHTML = 'جاري التنفيذ...';
-    apiCall('closeMonth')
-      .then(res => {
-        let html = '<p style="font-size:.82rem; margin-bottom:8px;">تم القفل بتاريخ ' + res.closedAt + '</p>';
-        if (res.conversions.length === 0) {
-          html += '<div class="empty">مفيش أي ديون متبقية عند أي موظف 🎉</div>';
-        } else {
-          html += '<table class="data-table"><tr><th>الموظف</th><th>الدين المحوَّل</th><th>الخصم المالي</th></tr>';
-          res.conversions.forEach(c => {
-            html += '<tr><td>' + c.name + '</td><td>' + formatHoursAsTime(c.debtHours) + '</td><td>' + c.financialDeduction + ' ج.م</td></tr>';
-          });
-          html += '</table>';
-        }
-        document.getElementById('closeMonthResult').innerHTML = html;
-      })
-      .catch(err => document.getElementById('closeMonthResult').innerHTML = 'خطأ: ' + err.message);
-  }
-
   function showMsg(elId, ok, text) {
     const el = document.getElementById(elId);
     el.className = 'msg show ' + (ok ? 'ok' : 'err');
@@ -2387,10 +2357,6 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   <button class="bnav-btn" data-panel="reports">
     <span class="bnav-icon">📊</span>
     <span class="bnav-lbl">التقارير</span>
-  </button>
-  <button class="bnav-btn" data-panel="month">
-    <span class="bnav-icon">🔒</span>
-    <span class="bnav-lbl">قفل الشهر</span>
   </button>
 </nav>
 
