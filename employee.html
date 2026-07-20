@@ -825,13 +825,8 @@ body {
     document.getElementById('empAvatar').textContent = status.name ? getInitialsEmp(status.name) : '؟';
 
     let indicatorHtml = '';
-    if (status.currentDebtHours > 0 && status.debtStatus === 'معلَّق') {
-      indicatorHtml =
-        '<div class="timing-pending">🕓 عندك دين وقت مبدئي' +
-        '<div class="timing-balance">' + formatHoursAsTime(status.currentDebtHours, true) + '</div>' +
-        '<div class="timing-sub">لسه بانتظار نظر صاحب العمل — ممكن يتلغي</div>' +
-        '<span class="badge bg-pending">⏳ معلَّق — غير مؤكَّد بعد</span></div>';
-    } else if (status.currentDebtHours > 0) {
+    // بند 40: حالة "معلَّق" اتشالت — كل الديون مؤكَّدة تلقائيًا
+    if (status.currentDebtHours > 0) {
       indicatorHtml =
         '<div class="timing-late">⏱️ عندك دين وقت مؤكَّد' +
         '<div class="timing-balance">' + formatHoursAsTime(status.currentDebtHours, true) + '</div>' +
@@ -872,8 +867,7 @@ body {
         let html =
           '<div class="row"><span>الحالة</span><b>' + res.debtLabel + '</b></div>';
         if (res.debtCreated > 0) {
-          html += '<div class="row"><span>دين ' + (res.debtStatus === 'معلَّق' ? 'معلَّق' : 'مؤكَّد') +
-            '</span><b>' + formatHoursAsTime(res.debtCreated, true) + '</b></div>';
+          html += '<div class="row"><span>دين مؤكَّد</span><b>' + formatHoursAsTime(res.debtCreated, true) + '</b></div>';
         }
         showResult(true, html);
         refreshStatus();
