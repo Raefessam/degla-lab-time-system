@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -1238,9 +1238,11 @@ body {
     else if (filter === 'checkout') attendance = attendance.filter(a => a.checkOut);
     else if (filter === 'requests') attendance = attendance.filter(a => requests.some(r => r.date === a.date));
 
-    // بند 37 + 38: ملخص محسّن — 3 كروت فرعية (الساعات بصيغة HH:MM)
+    // بند 37 + 38: ملخص محسّن — 4 كروت فرعية (أيام + شيفتات + ساعات + طلبات)
+    const shiftsCount = (data.summary.totalShifts !== undefined) ? data.summary.totalShifts : data.summary.totalDays;
     document.getElementById('historySummary').innerHTML =
       '<div class="hist-stat"><div class="hist-stat-num">' + data.summary.totalDays + '</div><div class="hist-stat-lbl">📅 يوم حضور</div></div>' +
+      '<div class="hist-stat"><div class="hist-stat-num">' + shiftsCount + '</div><div class="hist-stat-lbl">🕐 شيفت</div></div>' +
       '<div class="hist-stat"><div class="hist-stat-num">' + formatHoursAsTime(data.summary.totalHours) + '</div><div class="hist-stat-lbl">⏱ ساعة</div></div>' +
       '<div class="hist-stat"><div class="hist-stat-num">' + data.summary.totalRequests + '</div><div class="hist-stat-lbl">📋 طلب</div></div>';
 
