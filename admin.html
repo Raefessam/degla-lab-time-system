@@ -1110,7 +1110,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     <div class="stat-card-v2 warn">
       <div class="stat-icon">⏱</div>
       <div class="stat-num-v2" id="dashDebt">-</div>
-      <div class="stat-lbl-v2">إجمالي الدين (ساعة)</div>
+      <div class="stat-lbl-v2">إجمالي الدين</div>
     </div>
     <div class="stat-card-v2 danger">
       <div class="stat-icon">⚠</div>
@@ -1437,7 +1437,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     document.getElementById('dashWorking').textContent = data.cards.currentlyWorking;
     document.getElementById('dashCheckedOut').textContent = data.cards.checkedOutToday;
     document.getElementById('dashTotal').textContent = data.cards.totalAttendanceToday;
-    document.getElementById('dashDebt').textContent = data.cards.totalDebtHours;
+    document.getElementById('dashDebt').textContent = formatHoursAsTime(data.cards.totalDebtHours);
     document.getElementById('dashReview').textContent = data.cards.needsReviewCount;
 
     // بند 37: تنبيهات بالتصميم الجديد
@@ -1449,9 +1449,11 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       let html = '<div class="alerts-v2">';
       data.alerts.forEach(a => {
         const icon = iconMap[a.type] || '💡';
+        // بند 38: تحويل أي "X.YY ساعة" في النص لصيغة X:MM
+        const formattedMsg = String(a.message).replace(/(\d+\.\d+)\s*ساعة/g, (m, num) => formatHoursAsTime(parseFloat(num), true));
         html += '<div class="alert-v2 ' + a.type + '">' +
           '<div class="alert-icon-v2">' + icon + '</div>' +
-          '<div class="alert-msg-v2">' + a.message + '</div>' +
+          '<div class="alert-msg-v2">' + formattedMsg + '</div>' +
         '</div>';
       });
       html += '</div>';
@@ -1491,6 +1493,27 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     if (parts.length === 0) return '؟';
     if (parts.length === 1) return parts[0].charAt(0);
     return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+  }
+
+  /**
+   * بند 38: تنسيق الساعات كوقت مقروء (5.69 → 5:41) بدل الرقم العشري.
+   * الأشخاص بيفكروا بالوقت ساعات:دقايق مش أرقام عشرية.
+   * @param {number} hoursDecimal الساعات بصيغة رقم عشري (ممكن سالب)
+   * @param {boolean} showSuffix هل يظهر كلمة "ساعة" بعد الرقم (افتراضي false)
+   */
+  function formatHoursAsTime(hoursDecimal, showSuffix) {
+    if (hoursDecimal === null || hoursDecimal === undefined || isNaN(hoursDecimal)) return '0:00';
+    const negative = hoursDecimal < 0;
+    const abs = Math.abs(Number(hoursDecimal));
+    const wholeHours = Math.floor(abs);
+    const minutes = Math.round((abs - wholeHours) * 60);
+    // معالجة حالة التقريب لـ60 دقيقة (مثال: 5.999 → 6:00)
+    let finalHours = wholeHours;
+    let finalMinutes = minutes;
+    if (finalMinutes === 60) { finalHours += 1; finalMinutes = 0; }
+    const formatted = finalHours + ':' + String(finalMinutes).padStart(2, '0');
+    const result = (negative ? '-' : '') + formatted;
+    return showSuffix ? result + ' ساعة' : result;
   }
 
   // ---- بند 19: سجل الحضور — تحميل مرة واحدة، فلترة محلية بالكامل ----
@@ -1648,7 +1671,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
           html += '<div class="debt-strip-v2 ' + statusClass + '">' +
             '<div class="debt-info-row">' +
               '<div class="debt-info-icon">⏱</div>' +
-              '<span class="debt-txt">دين <b>' + debtEvent.debtHours + '</b> ساعة — ' + statusEmoji + ' ' + statusLabel + '</span>' +
+              '<span class="debt-txt">دين <b>' + formatHoursAsTime(debtEvent.debtHours) + '</b> — ' + statusEmoji + ' ' + statusLabel + '</span>' +
             '</div>';
           if (debtEvent.debtCancelled) {
             html += '<button class="btn-mini-v2 reenable" onclick="reenableDeduction(\'' + recordId + '\')">🔄 إعادة تفعيل</button>';
@@ -2150,7 +2173,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     html += '<div class="mini-grid">';
     html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.attendanceSummary.daysWorked + '</div><div class="mini-stat-lbl">أيام حضور</div></div>';
     html += '<div class="mini-stat pos"><div class="mini-stat-num">' + shiftsCount + '</div><div class="mini-stat-lbl">عدد الشيفتات</div></div>';
-    html += '<div class="mini-stat info"><div class="mini-stat-num">' + r.attendanceSummary.totalHours + '</div><div class="mini-stat-lbl">إجمالي الساعات</div></div>';
+    html += '<div class="mini-stat info"><div class="mini-stat-num">' + formatHoursAsTime(r.attendanceSummary.totalHours) + '</div><div class="mini-stat-lbl">إجمالي الساعات</div></div>';
     html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.lateCount + '</div><div class="mini-stat-lbl">مرات تأخير</div></div>';
     html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="mini-stat-lbl">انصراف مبكر</div></div>';
     html += '</div></div>';
@@ -2163,9 +2186,9 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       '<div class="rep-section-sub">الدين الناشئ، التغطية بالأوفر تايم، والرصيد المتبقي</div></div>' +
     '</div>';
     html += '<div class="mini-grid">';
-    html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.debtSummary.createdThisMonth + '</div><div class="mini-stat-lbl">دين نشأ (ساعة)</div></div>';
-    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.debtSummary.settledThisMonth + '</div><div class="mini-stat-lbl">تمت تغطيته</div></div>';
-    html += '<div class="mini-stat neg"><div class="mini-stat-num">' + r.debtSummary.remainingBalance + '</div><div class="mini-stat-lbl">الرصيد المتبقي</div></div>';
+    html += '<div class="mini-stat warn"><div class="mini-stat-num">' + formatHoursAsTime(r.debtSummary.createdThisMonth) + '</div><div class="mini-stat-lbl">دين نشأ هذا الشهر</div></div>';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + formatHoursAsTime(r.debtSummary.settledThisMonth) + '</div><div class="mini-stat-lbl">تمت تغطيته</div></div>';
+    html += '<div class="mini-stat neg"><div class="mini-stat-num">' + formatHoursAsTime(r.debtSummary.remainingBalance) + '</div><div class="mini-stat-lbl">الرصيد المتبقي</div></div>';
     html += '<div class="mini-stat neg"><div class="mini-stat-num">' + r.debtSummary.remainingDeduction + '</div><div class="mini-stat-lbl">قيمته المالية (ج.م)</div></div>';
     html += '</div></div>';
 
@@ -2177,7 +2200,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       '<div class="rep-section-sub">الساعات الإضافية التي لم تُستخدم في تغطية الدين</div></div>' +
     '</div>';
     html += '<div class="mini-grid">';
-    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.overtimeSummary.paidHours + '</div><div class="mini-stat-lbl">ساعات مدفوعة</div></div>';
+    html += '<div class="mini-stat pos"><div class="mini-stat-num">' + formatHoursAsTime(r.overtimeSummary.paidHours) + '</div><div class="mini-stat-lbl">ساعات مدفوعة</div></div>';
     html += '<div class="mini-stat pos"><div class="mini-stat-num">' + r.overtimeSummary.paidAmount + '</div><div class="mini-stat-lbl">القيمة (ج.م)</div></div>';
     html += '</div></div>';
 
@@ -2231,9 +2254,10 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       html += '<div class="salary-details">';
       r.breakdown.baseSalaryBreakdown.forEach(g => {
         const rate = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        const timeFormat = formatHoursAsTime(g.hours);
         html += '<div class="salary-detail-row">' +
           '<span class="salary-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
-          '<span class="salary-detail-rhs">' + g.hours + ' × ' + rate + ' = ' + g.subtotal.toLocaleString() + '</span>' +
+          '<span class="salary-detail-rhs">' + timeFormat + ' × ' + rate + ' = ' + g.subtotal.toLocaleString() + '</span>' +
         '</div>';
       });
       html += '</div>';
@@ -2250,9 +2274,10 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       html += '<div class="salary-details">';
       r.breakdown.overtimeBreakdown.forEach(g => {
         const rate = (Math.round(g.hourlyRate * 100) / 100).toLocaleString();
+        const timeFormat = formatHoursAsTime(g.hours);
         html += '<div class="salary-detail-row">' +
           '<span class="salary-detail-lhs">' + g.branch + ' — ' + g.shift + '</span>' +
-          '<span class="salary-detail-rhs">' + g.hours + ' × ' + rate + ' × ' + g.multiplier + ' = ' + g.subtotal.toLocaleString() + '</span>' +
+          '<span class="salary-detail-rhs">' + timeFormat + ' × ' + rate + ' × ' + g.multiplier + ' = ' + g.subtotal.toLocaleString() + '</span>' +
         '</div>';
       });
       html += '</div>';
@@ -2269,9 +2294,10 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       html += '<div class="salary-details">';
       r.breakdown.debtDeductionBreakdown.forEach(chunk => {
         const rate = (Math.round(chunk.hourlyRate * 100) / 100).toLocaleString();
+        const timeFormat = formatHoursAsTime(chunk.hours);
         html += '<div class="salary-detail-row">' +
           '<span class="salary-detail-lhs">جزء متبقي (FIFO)</span>' +
-          '<span class="salary-detail-rhs">' + chunk.hours + ' × ' + rate + ' = ' + chunk.subtotal.toLocaleString() + '</span>' +
+          '<span class="salary-detail-rhs">' + timeFormat + ' × ' + rate + ' = ' + chunk.subtotal.toLocaleString() + '</span>' +
         '</div>';
       });
       html += '</div>';
@@ -2318,7 +2344,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
         } else {
           html += '<table class="data-table"><tr><th>الموظف</th><th>الدين المحوَّل</th><th>الخصم المالي</th></tr>';
           res.conversions.forEach(c => {
-            html += '<tr><td>' + c.name + '</td><td>' + c.debtHours + ' ساعة</td><td>' + c.financialDeduction + ' ج.م</td></tr>';
+            html += '<tr><td>' + c.name + '</td><td>' + formatHoursAsTime(c.debtHours) + '</td><td>' + c.financialDeduction + ' ج.م</td></tr>';
           });
           html += '</table>';
         }

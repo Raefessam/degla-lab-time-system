@@ -828,13 +828,13 @@ body {
     if (status.currentDebtHours > 0 && status.debtStatus === 'معلَّق') {
       indicatorHtml =
         '<div class="timing-pending">🕓 عندك دين وقت مبدئي' +
-        '<div class="timing-balance">' + status.currentDebtHours.toFixed(2) + ' ساعة</div>' +
+        '<div class="timing-balance">' + formatHoursAsTime(status.currentDebtHours, true) + '</div>' +
         '<div class="timing-sub">لسه بانتظار نظر صاحب العمل — ممكن يتلغي</div>' +
         '<span class="badge bg-pending">⏳ معلَّق — غير مؤكَّد بعد</span></div>';
     } else if (status.currentDebtHours > 0) {
       indicatorHtml =
         '<div class="timing-late">⏱️ عندك دين وقت مؤكَّد' +
-        '<div class="timing-balance">' + status.currentDebtHours.toFixed(2) + ' ساعة</div>' +
+        '<div class="timing-balance">' + formatHoursAsTime(status.currentDebtHours, true) + '</div>' +
         '<div class="timing-sub">اشتغل أوفر تايم عشان تعوضه قبل آخر الشهر</div></div>';
     } else {
       indicatorHtml = '<div class="timing-ok">✅ أنت في المنطقة الآمنة<div class="timing-sub">مفيش أي دين وقت عليك دلوقتي</div></div>';
@@ -873,7 +873,7 @@ body {
           '<div class="row"><span>الحالة</span><b>' + res.debtLabel + '</b></div>';
         if (res.debtCreated > 0) {
           html += '<div class="row"><span>دين ' + (res.debtStatus === 'معلَّق' ? 'معلَّق' : 'مؤكَّد') +
-            '</span><b>' + res.debtCreated.toFixed(2) + ' ساعة</b></div>';
+            '</span><b>' + formatHoursAsTime(res.debtCreated, true) + '</b></div>';
         }
         showResult(true, html);
         refreshStatus();
@@ -905,18 +905,18 @@ body {
           showConfirmModal('انصراف', currentStatus && currentStatus.name ? currentStatus.name : '', branch, shift, nowStr);
 
           let html =
-            '<div class="row"><span>ساعات العمل الفعلية</span><b>' + res.actualHours + ' ساعة</b></div>' +
-            '<div class="row"><span>أوفر تايم اليوم</span><b>' + res.overtimeHoursActual + ' ساعة</b></div>';
+            '<div class="row"><span>ساعات العمل الفعلية</span><b>' + formatHoursAsTime(res.actualHours, true) + '</b></div>' +
+            '<div class="row"><span>أوفر تايم اليوم</span><b>' + formatHoursAsTime(res.overtimeHoursActual, true) + '</b></div>';
           if (res.overtimeAppliedToDebt > 0) {
             html += '<div class="row"><span>غطّى من الدين</span><b>' + res.debtSettledLabel + '</b></div>';
           }
           if (res.overtimePaidHours > 0) {
-            html += '<div class="row"><span>أوفر تايم مدفوع</span><b>' + res.overtimePaidHours + ' ساعة (' + res.overtimePaidAmount + ' ج.م)</b></div>';
+            html += '<div class="row"><span>أوفر تايم مدفوع</span><b>' + formatHoursAsTime(res.overtimePaidHours) + ' (' + res.overtimePaidAmount + ' ج.م)</b></div>';
           }
           if (res.earlyDepartureHours > 0) {
-            html += '<div class="row"><span>انصراف مبكر</span><b>' + res.earlyDepartureHours + ' ساعة</b></div>';
+            html += '<div class="row"><span>انصراف مبكر</span><b>' + formatHoursAsTime(res.earlyDepartureHours, true) + '</b></div>';
           }
-          html += '<div class="row"><span>رصيد الدين الحالي</span><b>' + res.currentBalance.toFixed(2) + ' ساعة</b></div>';
+          html += '<div class="row"><span>رصيد الدين الحالي</span><b>' + formatHoursAsTime(res.currentBalance, true) + '</b></div>';
           showResult(true, html);
         }
         refreshStatus();
@@ -988,6 +988,26 @@ body {
     if (parts.length === 0) return '؟';
     if (parts.length === 1) return parts[0].charAt(0);
     return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+  }
+
+  /**
+   * بند 38: تنسيق الساعات كوقت مقروء (5.69 → 5:41) بدل الرقم العشري.
+   * الأشخاص بيفكروا بالوقت ساعات:دقايق مش أرقام عشرية.
+   * @param {number} hoursDecimal الساعات بصيغة رقم عشري (ممكن سالب)
+   * @param {boolean} showSuffix هل يظهر كلمة "ساعة" بعد الرقم (افتراضي false)
+   */
+  function formatHoursAsTime(hoursDecimal, showSuffix) {
+    if (hoursDecimal === null || hoursDecimal === undefined || isNaN(hoursDecimal)) return '0:00';
+    const negative = hoursDecimal < 0;
+    const abs = Math.abs(Number(hoursDecimal));
+    const wholeHours = Math.floor(abs);
+    const minutes = Math.round((abs - wholeHours) * 60);
+    let finalHours = wholeHours;
+    let finalMinutes = minutes;
+    if (finalMinutes === 60) { finalHours += 1; finalMinutes = 0; }
+    const formatted = finalHours + ':' + String(finalMinutes).padStart(2, '0');
+    const result = (negative ? '-' : '') + formatted;
+    return showSuffix ? result + ' ساعة' : result;
   }
 
   // ---- بند 28: شريط التنبيه اللحظي (تأخير/تقدُّم/في الموعد) — مطابق R1 ----
@@ -1218,10 +1238,10 @@ body {
     else if (filter === 'checkout') attendance = attendance.filter(a => a.checkOut);
     else if (filter === 'requests') attendance = attendance.filter(a => requests.some(r => r.date === a.date));
 
-    // بند 37: ملخص محسّن — 3 كروت فرعية
+    // بند 37 + 38: ملخص محسّن — 3 كروت فرعية (الساعات بصيغة HH:MM)
     document.getElementById('historySummary').innerHTML =
       '<div class="hist-stat"><div class="hist-stat-num">' + data.summary.totalDays + '</div><div class="hist-stat-lbl">📅 يوم حضور</div></div>' +
-      '<div class="hist-stat"><div class="hist-stat-num">' + data.summary.totalHours + '</div><div class="hist-stat-lbl">⏱ ساعة</div></div>' +
+      '<div class="hist-stat"><div class="hist-stat-num">' + formatHoursAsTime(data.summary.totalHours) + '</div><div class="hist-stat-lbl">⏱ ساعة</div></div>' +
       '<div class="hist-stat"><div class="hist-stat-num">' + data.summary.totalRequests + '</div><div class="hist-stat-lbl">📋 طلب</div></div>';
 
     if (attendance.length === 0 && requests.length === 0) {
@@ -1242,7 +1262,7 @@ body {
         '<div class="hist-day-icon">📅</div>' +
         '<div class="hist-day-date">' + a.date + '</div>';
       if (a.hoursWorked > 0) {
-        html += '<div class="hist-day-badge">' + a.hoursWorked.toFixed(2) + ' ساعة</div>';
+        html += '<div class="hist-day-badge">' + formatHoursAsTime(a.hoursWorked) + '</div>';
       }
       html += '</div>';
 
@@ -1299,11 +1319,11 @@ body {
 
     document.getElementById('historyContainer').innerHTML = html;
 
-    // بند 37: صف الإجمالي محسّن
+    // بند 37 + 38: صف الإجمالي محسّن (بصيغة HH:MM)
     document.getElementById('historyTotalRow').innerHTML =
       '<div class="hist-total">' +
         '<div class="hist-total-lbl"><div class="hist-total-icon">⏱</div>الإجمالي</div>' +
-        '<div class="hist-total-val">' + filteredTotal.toFixed(2) + ' ساعة</div>' +
+        '<div class="hist-total-val">' + formatHoursAsTime(filteredTotal, true) + '</div>' +
       '</div>';
   }
 </script>
