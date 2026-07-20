@@ -45,7 +45,7 @@
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
-body { padding:14px 14px 40px; max-width:900px; margin:0 auto; }
+body { padding:max(env(safe-area-inset-top, 0px), 20px) 14px 40px; max-width:900px; margin:0 auto; }
 
 .hdr { text-align:center; padding:16px 0 18px; }
 .hdr h1 { color:var(--gd); font-size:1.1rem; font-weight:900; }

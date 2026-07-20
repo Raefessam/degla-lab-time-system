@@ -35,8 +35,9 @@ html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); c
 body {
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     min-height:100vh; min-height:100dvh;
-    /* بند 37 fix: مساحة أمان لأجهزة iPhone اللي فيها notch */
-    padding:env(safe-area-inset-top, 0px) 0 32px;
+    /* بند 37 نهائي: مساحة أمان لشريط الحالة (44px على iPhone بـnotch، 0 على غيرها) */
+    padding-top:max(env(safe-area-inset-top, 0px), 20px);
+    padding-bottom:32px;
     background:var(--gp);
 }
 
@@ -284,7 +285,11 @@ body {
 }
 .hist-day-date {
     font-weight:900; font-size:.82rem; color:var(--gd);
-    flex:1;
+    line-height:1.2;
+}
+.hist-day-meta {
+    font-size:.7rem; color:var(--m); font-weight:700;
+    margin-top:2px;
 }
 .hist-day-badge {
     background:white; color:var(--gd);
@@ -396,8 +401,18 @@ body {
 
 /* بند 22.2: تابات الطلبات — مطابقة R1 */
 .req-tabs { display:flex; gap:6px; margin-bottom:14px; background:var(--b3); border-radius:12px; padding:4px; }
-.rtab { flex:1; text-align:center; padding:9px 6px; border-radius:9px; font-size:.82rem; font-weight:700; color:var(--m); cursor:pointer; transition:all .2s; }
-.rtab.on { background:var(--gd); color:white; box-shadow:0 2px 8px rgba(45,110,14,.3); }
+.rtab {
+    flex:1; text-align:center; padding:9px 6px; border-radius:9px;
+    font-size:.82rem; font-weight:700; color:var(--m);
+    background:transparent; /* بند 40 fix: مهم عشان الغير-محدد يبقى شفاف */
+    cursor:pointer; transition:all .2s;
+    border:none; font-family:"Cairo",sans-serif;
+}
+.rtab.on {
+    background:var(--gd) !important; /* بند 40 fix: !important عشان يتغلب على أي inherit */
+    color:white !important;
+    box-shadow:0 2px 8px rgba(45,110,14,.3);
+}
 .req-form { display:none; }
 .req-form.on { display:block; }
 
@@ -1253,10 +1268,13 @@ body {
       filteredTotal += a.hoursWorked || 0;
 
       html += '<div class="hist-day-card">';
-      // ترويسة الكارت — التاريخ + بادج بالساعات
+      // ترويسة الكارت — التاريخ + الفرع والشيفت + بادج بالساعات
       html += '<div class="hist-day-header">' +
         '<div class="hist-day-icon">📅</div>' +
-        '<div class="hist-day-date">' + a.date + '</div>';
+        '<div style="flex:1;">' +
+          '<div class="hist-day-date">' + a.date + '</div>' +
+          '<div class="hist-day-meta">🕐 ' + (a.shift || '') + ' — ' + (a.branch || '') + '</div>' +
+        '</div>';
       if (a.hoursWorked > 0) {
         html += '<div class="hist-day-badge">' + formatHoursAsTime(a.hoursWorked) + '</div>';
       }
