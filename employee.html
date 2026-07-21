@@ -387,6 +387,81 @@ body {
 }
 .hist-total-val { font-weight:900; color:var(--gd); font-size:1.05rem; }
 
+/* ══════════════════════════════════════════════════════════
+   بند 40: تصميم محسّن لبوكس نتيجة الانصراف
+   ══════════════════════════════════════════════════════════ */
+
+/* ---------- هيرو النتيجة (كارت أخضر متدرج بأيقونة) ---------- */
+.result-hero {
+    background:linear-gradient(135deg, var(--gd), var(--g));
+    color:white; border-radius:14px;
+    padding:14px 16px; margin-bottom:12px;
+    text-align:center;
+    box-shadow:0 6px 18px rgba(78,144,18,.22);
+    position:relative; overflow:hidden;
+}
+.result-hero::before {
+    content:""; position:absolute; top:-30px; left:-20px;
+    width:110px; height:110px; border-radius:50%;
+    background:rgba(255,255,255,.08); pointer-events:none;
+}
+.result-hero::after {
+    content:""; position:absolute; bottom:-40px; right:-30px;
+    width:120px; height:120px; border-radius:50%;
+    background:rgba(255,255,255,.05); pointer-events:none;
+}
+.result-hero-icon {
+    width:52px; height:52px; border-radius:50%;
+    background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; margin:0 auto 8px;
+    border:2px solid rgba(255,255,255,.28);
+    position:relative; z-index:1;
+}
+.result-hero-title {
+    font-weight:900; font-size:1.05rem;
+    position:relative; z-index:1;
+}
+.result-hero-sub {
+    font-size:.72rem; opacity:.92; font-weight:700;
+    margin-top:3px; position:relative; z-index:1;
+}
+
+/* ---------- صفوف تفاصيل النتيجة ---------- */
+.result-rows {
+    background:white; border-radius:14px;
+    padding:6px; border:1.5px solid var(--b3);
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.result-row-v2 {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 12px; border-radius:10px;
+    transition:background .15s;
+}
+.result-row-v2 + .result-row-v2 { border-top:1px dashed var(--b3); }
+.result-row-icon {
+    width:32px; height:32px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.95rem; flex-shrink:0;
+}
+.result-row-label {
+    flex:1; font-size:.8rem; font-weight:700; color:var(--m);
+}
+.result-row-value {
+    font-weight:900; font-size:.88rem;
+    font-variant-numeric:tabular-nums;
+}
+
+/* ألوان الأيقونات + القيم حسب النوع */
+.result-row-v2.info .result-row-icon { background:#e8f2fc; color:#1565c0; }
+.result-row-v2.info .result-row-value { color:var(--t); }
+.result-row-v2.pos .result-row-icon { background:var(--gl); color:var(--gd); }
+.result-row-v2.pos .result-row-value { color:var(--gd); }
+.result-row-v2.warn .result-row-icon { background:#fef5e7; color:#B9770E; }
+.result-row-v2.warn .result-row-value { color:#B9770E; }
+.result-row-v2.neg .result-row-icon { background:var(--rl); color:var(--r); }
+.result-row-v2.neg .result-row-value { color:var(--r); }
+
 .step { width:100%; max-width:420px; padding:14px; }
 .card { background:white; border-radius:20px; padding:18px; margin-bottom:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1.5px solid var(--b3); }
 .stitle { font-weight:900; font-size:.95rem; color:var(--t); margin-bottom:14px; }
@@ -481,6 +556,8 @@ body {
 .result-box.ok { background:var(--gl); border:1.5px solid var(--g); color:var(--t); }
 .result-box.err { background:var(--rl); border:1.5px solid var(--r); color:var(--r); }
 .result-box .row { display:flex; justify-content:space-between; border-bottom:1px dashed var(--b3); padding:5px 0; }
+/* بند 40: لو المحتوى بالتصميم الجديد (فيه .result-hero)، شيل الـwrapper الملوّن */
+.result-box.ok:has(.result-hero) { background:transparent; border:none; padding:0; }
 .result-box .row:last-child { border-bottom:none; }
 
 .spinner { display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
@@ -913,19 +990,31 @@ body {
           const nowStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
           showConfirmModal('انصراف', currentStatus && currentStatus.name ? currentStatus.name : '', branch, shift, nowStr);
 
-          let html =
-            '<div class="row"><span>ساعات العمل الفعلية</span><b>' + formatHoursAsTime(res.actualHours, true) + '</b></div>' +
-            '<div class="row"><span>أوفر تايم اليوم</span><b>' + formatHoursAsTime(res.overtimeHoursActual, true) + '</b></div>';
+          // بند 40: تصميم محسّن لبوكس نتيجة الانصراف — كارتات صفوف بأيقونات + كل الأرقام HH:MM
+          let html = '<div class="result-hero">' +
+            '<div class="result-hero-icon">🚪</div>' +
+            '<div class="result-hero-title">تم تسجيل الانصراف</div>' +
+            '<div class="result-hero-sub">' + nowStr + ' — ' + (shift || '') + ' / ' + (branch || '') + '</div>' +
+          '</div>';
+
+          html += '<div class="result-rows">';
+          html += buildResultRow('⏱', 'ساعات العمل الفعلية', formatHoursAsTime(res.actualHours, true), 'info');
+          html += buildResultRow('🚀', 'أوفر تايم اليوم', formatHoursAsTime(res.overtimeHoursActual, true), 'info');
           if (res.overtimeAppliedToDebt > 0) {
-            html += '<div class="row"><span>غطّى من الدين</span><b>' + res.debtSettledLabel + '</b></div>';
+            // بند 40: استخدم القيمة العددية (debtCoveredHours) لتنسيق HH:MM بدل النص الجاي من الباك
+            const coveredFormatted = formatHoursAsTime(res.debtCoveredHours || 0, true);
+            html += buildResultRow('✓', 'غطّى من الدين', 'تم تغطية ' + coveredFormatted + ' دين', 'pos');
           }
           if (res.overtimePaidHours > 0) {
-            html += '<div class="row"><span>أوفر تايم مدفوع</span><b>' + formatHoursAsTime(res.overtimePaidHours) + ' (' + res.overtimePaidAmount + ' ج.م)</b></div>';
+            html += buildResultRow('💰', 'أوفر تايم مدفوع', formatHoursAsTime(res.overtimePaidHours) + ' (' + res.overtimePaidAmount + ' ج.م)', 'pos');
           }
           if (res.earlyDepartureHours > 0) {
-            html += '<div class="row"><span>انصراف مبكر</span><b>' + formatHoursAsTime(res.earlyDepartureHours, true) + '</b></div>';
+            html += buildResultRow('⏳', 'انصراف مبكر', formatHoursAsTime(res.earlyDepartureHours, true), 'warn');
           }
-          html += '<div class="row"><span>رصيد الدين الحالي</span><b>' + formatHoursAsTime(res.currentBalance, true) + '</b></div>';
+          const debtColor = res.currentBalance > 0 ? 'neg' : 'pos';
+          html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'رصيد الدين الحالي', formatHoursAsTime(res.currentBalance, true), debtColor);
+          html += '</div>';
+
           showResult(true, html);
         }
         refreshStatus();
@@ -935,6 +1024,15 @@ body {
         btn.textContent = '🚪 تسجيل انصراف';
         showResult(false, err.message);
       });
+  }
+
+  /** بند 40: بناء صف واحد في نتيجة الانصراف — أيقونة ملوّنة + تسمية + قيمة */
+  function buildResultRow(icon, label, value, tone) {
+    return '<div class="result-row-v2 ' + tone + '">' +
+      '<div class="result-row-icon">' + icon + '</div>' +
+      '<div class="result-row-label">' + label + '</div>' +
+      '<div class="result-row-value">' + value + '</div>' +
+    '</div>';
   }
 
   function showResult(ok, html) {
