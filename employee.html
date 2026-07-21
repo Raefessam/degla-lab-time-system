@@ -40,6 +40,8 @@ body {
     padding-bottom:32px;
     background:var(--gp);
 }
+/* بند 40 fix: منع أي عنصر مباشر تحت body من الضغط (يحل مشكلة صغر الهيدر لما المحتوى طويل) */
+body > * { flex-shrink:0; }
 
 .hdr {
     width:100%; background:white; padding:16px 16px 14px;
@@ -64,6 +66,7 @@ body {
     display:flex; align-items:center; gap:14px;
     position:relative; overflow:hidden;
     align-self:stretch;
+    flex-shrink:0; /* بند 40 fix: منع الهيدر من الضغط لما المحتوى تحته يبقى طويل */
 }
 .brand-header::before {
     content:""; position:absolute; top:-30px; left:-25px;
