@@ -1039,9 +1039,30 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   .bnav-lbl { font-size:.5rem; }
   .bnav-icon { font-size:.95rem; }
 }
+
+/* بند 41: شريط تحميل رفيع فوق الصفحة (Loading Bar) */
+.loading-bar {
+    position:fixed; top:0; left:0; right:0;
+    height:3px; background:transparent;
+    z-index:9999; pointer-events:none;
+    opacity:0; transition:opacity .2s;
+}
+.loading-bar.active { opacity:1; }
+.loading-bar::before {
+    content:""; display:block; height:100%; width:40%;
+    background:linear-gradient(90deg, transparent, #6abf1e, #4e9012, #6abf1e, transparent);
+    box-shadow:0 0 8px rgba(78,144,18,.5);
+    animation:loadingSlide 1.2s ease-in-out infinite;
+}
+@keyframes loadingSlide {
+    0% { transform:translateX(-100%); }
+    100% { transform:translateX(350%); }
+}
 </style>
 </head>
 <body>
+<!-- بند 41: شريط التحميل — يظهر تلقائيًا عند أي طلب API -->
+<div class="loading-bar" id="loadingBar"></div>
 
 <!-- بند 30.1: شاشة التحميل — تختفي تلقائيًا بعد 2.2 ثانية -->
 <div id="splash">
@@ -1314,15 +1335,36 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
 
+  // بند 41: نظام مؤشر التحميل — بيتفعل تلقائيًا عند أي API call
+  // بيستخدم عداد عشان لو فيه أكتر من طلب في نفس الوقت، المؤشر يفضل ظاهر لحد ما كلهم يخلصوا
+  let activeApiCalls = 0;
+  function showLoadingBar() {
+    activeApiCalls++;
+    const bar = document.getElementById('loadingBar');
+    if (bar) bar.classList.add('active');
+  }
+  function hideLoadingBar() {
+    activeApiCalls = Math.max(0, activeApiCalls - 1);
+    if (activeApiCalls === 0) {
+      const bar = document.getElementById('loadingBar');
+      if (bar) bar.classList.remove('active');
+    }
+  }
+
   function apiCall(action, params) {
     const url = new URL(APPS_SCRIPT_URL);
     url.searchParams.set('action', action);
     Object.keys(params || {}).forEach(k => {
       if (params[k] !== null && params[k] !== undefined) url.searchParams.set(k, params[k]);
     });
+    showLoadingBar();
     return fetch(url).then(r => r.json()).then(data => {
+      hideLoadingBar();
       if (data && data.error) throw new Error(data.error);
       return data;
+    }).catch(err => {
+      hideLoadingBar();
+      throw err;
     });
   }
 
