@@ -484,6 +484,73 @@ body > * { flex-shrink:0; }
 .result-row-v2.neg .result-row-icon { background:var(--rl); color:var(--r); }
 .result-row-v2.neg .result-row-value { color:var(--r); }
 
+/* ══════════════════════════════════════════════════════════
+   بند 43: شاشة التصحيح الذاتي (الشيفت الطويل)
+   ══════════════════════════════════════════════════════════ */
+.corr-modal-body {
+    background:white; border-radius:20px;
+    max-width:440px; width:100%;
+    max-height:90vh; overflow-y:auto;
+    padding:20px;
+    box-shadow:0 10px 40px rgba(0,0,0,.3);
+}
+.corr-modal-header {
+    text-align:center; margin-bottom:16px;
+    padding-bottom:14px; border-bottom:1.5px dashed var(--b3);
+}
+.corr-modal-icon {
+    width:56px; height:56px; border-radius:16px;
+    background:linear-gradient(135deg, #f5b041, #e67e22);
+    color:white; margin:0 auto 10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem;
+    box-shadow:0 4px 12px rgba(230,126,34,.28);
+}
+.corr-modal-title {
+    font-weight:900; font-size:1.05rem;
+    color:#B9770E; margin-bottom:4px;
+}
+.corr-modal-sub {
+    font-size:.78rem; color:var(--m); font-weight:700;
+    line-height:1.5;
+}
+.corr-info-box {
+    background:#fef8e8; border:1.5px solid #f0d68c;
+    border-radius:12px; padding:12px 14px;
+    margin-bottom:14px;
+}
+.corr-info-row {
+    display:flex; justify-content:space-between;
+    padding:5px 0; font-size:.82rem;
+}
+.corr-info-row + .corr-info-row { border-top:1px dashed #f0d68c; }
+.corr-info-row span { color:var(--m); font-weight:700; }
+.corr-info-row b { color:var(--t); font-weight:900; }
+.corr-info-row.corr-warn b { color:#B9770E; font-size:.95rem; }
+
+.corr-options-wrap { margin-bottom:14px; }
+.corr-options-title {
+    font-size:.85rem; font-weight:900; color:var(--gd);
+    margin-bottom:10px;
+}
+.corr-option {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 14px; margin-bottom:8px;
+    background:#fbfcfa; border:1.5px solid var(--b3);
+    border-radius:12px; cursor:pointer;
+    font-size:.82rem; font-weight:700; color:var(--t);
+    transition:all .15s;
+}
+.corr-option:has(input:checked) {
+    background:var(--gp); border-color:var(--g);
+    color:var(--gd); box-shadow:0 2px 8px rgba(78,144,18,.15);
+}
+.corr-option input[type=radio] {
+    width:18px; height:18px; accent-color:var(--gd);
+    flex-shrink:0; cursor:pointer;
+}
+.corr-actions { margin-top:8px; }
+
 .step { width:100%; max-width:420px; padding:14px; }
 .card { background:white; border-radius:20px; padding:18px; margin-bottom:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1.5px solid var(--b3); }
 .stitle { font-weight:900; font-size:.95rem; color:var(--t); margin-bottom:14px; }
@@ -786,6 +853,32 @@ body > * { flex-shrink:0; }
 </div>
 
 <!-- بند 22.1: نافذة السجل الشهري -->
+<!-- بند 43: شاشة التصحيح الذاتي — تظهر لما الشيفت طويل جدًا (نسيان الانصراف) -->
+<div id="correctionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div class="corr-modal-body">
+    <div class="corr-modal-header">
+      <div class="corr-modal-icon">⚠️</div>
+      <div class="corr-modal-title">الشيفت طويل جدًا</div>
+      <div class="corr-modal-sub">يبدو إنك نسيت تسجيل الانصراف. اختر وقت الانصراف الصحيح.</div>
+    </div>
+
+    <div class="corr-info-box" id="correctionInfo"></div>
+
+    <div class="corr-options-wrap">
+      <div class="corr-options-title">وقت الانصراف الفعلي:</div>
+      <div id="correctionOptions"></div>
+    </div>
+
+    <div class="corr-actions">
+      <button class="att-btn-hero att-btn-hero-in" id="correctionConfirmBtn" onclick="confirmCorrection()">
+        <span class="att-btn-hero-icon">✅</span>
+        <span class="att-btn-hero-txt">تأكيد الانصراف</span>
+      </button>
+      <button class="menu-btn-v2" style="margin-top:10px; justify-content:center;" onclick="closeCorrectionModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:9998; overflow-y:auto; padding:20px 0;">
   <div style="background:white; border-radius:15px; max-width:480px; margin:20px auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.2);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -1031,8 +1124,16 @@ body > * { flex-shrink:0; }
 
         if (res.status === 'يحتاج مراجعة') {
           showResult(false, res.message);
-        } else {
-          const nowStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
+          return;
+        }
+
+        // بند 43: الشيفت طويل جدًا — اعرض شاشة التصحيح الذاتي
+        if (res.status === 'يحتاج تصحيح') {
+          showCorrectionModal(res);
+          return;
+        }
+
+        const nowStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit' });
           showConfirmModal('انصراف', currentStatus && currentStatus.name ? currentStatus.name : '', branch, shift, nowStr);
 
           // بند 40: تصميم محسّن لبوكس نتيجة الانصراف — كارتات صفوف بأيقونات + كل الأرقام HH:MM
@@ -1065,7 +1166,6 @@ body > * { flex-shrink:0; }
           html += '</div>';
 
           showResult(true, html);
-        }
         refreshStatus();
       })
       .catch(function(err){
@@ -1073,6 +1173,93 @@ body > * { flex-shrink:0; }
         btn.textContent = '🚪 تسجيل انصراف';
         showResult(false, err.message);
       });
+  }
+
+  /** بند 43: عرض شاشة التصحيح الذاتي — الموظف يختار وقت الانصراف الفعلي */
+  function showCorrectionModal(res) {
+    const modal = document.getElementById('correctionModal');
+    const info = document.getElementById('correctionInfo');
+    const opts = document.getElementById('correctionOptions');
+
+    info.innerHTML =
+      '<div class="corr-info-row"><span>وقت الحضور:</span><b>' + res.checkInTime + '</b></div>' +
+      '<div class="corr-info-row"><span>نهاية الشيفت الرسمية:</span><b>' + res.shiftEndTime + '</b></div>' +
+      '<div class="corr-info-row corr-warn"><span>المدة الحالية:</span><b>' + formatHoursAsTime(res.durationHours, true) + '</b></div>';
+
+    let optsHtml = '';
+    (res.suggestions || []).forEach(function(s, idx) {
+      optsHtml += '<label class="corr-option"><input type="radio" name="correctionChoice" value="' + s.value + '"' +
+        (idx === 0 ? ' checked' : '') + '/>' +
+        '<span>' + s.label + '</span></label>';
+    });
+    opts.innerHTML = optsHtml;
+
+    // تخزين بيانات الطلب للاستخدام عند التأكيد
+    modal.dataset.recordId = res.recordId;
+    modal.dataset.branch = res.branch;
+    modal.dataset.shift = res.shift;
+
+    modal.style.display = 'flex';
+  }
+
+  function closeCorrectionModal() {
+    document.getElementById('correctionModal').style.display = 'none';
+  }
+
+  function confirmCorrection() {
+    const modal = document.getElementById('correctionModal');
+    const selected = modal.querySelector('input[name="correctionChoice"]:checked');
+    if (!selected) { alert('اختر وقت الانصراف الأول'); return; }
+
+    const btn = document.getElementById('correctionConfirmBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
+
+    apiCall('checkOutWithCorrection', {
+      employeeId: currentEmployeeId,
+      recordId: modal.dataset.recordId,
+      correctedTime: selected.value,
+      branch: modal.dataset.branch,
+      shift: modal.dataset.shift,
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.innerHTML = '✅ تأكيد الانصراف';
+      closeCorrectionModal();
+
+      // عرض نتيجة الانصراف بالتصميم العادي مع علامة "تم التصحيح ذاتيًا"
+      const shift = modal.dataset.shift;
+      const branch = modal.dataset.branch;
+      const correctedTimeShort = selected.value.substring(11, 16);
+
+      let html = '<div class="result-hero">' +
+        '<div class="result-hero-icon">✏️</div>' +
+        '<div class="result-hero-title">تم تسجيل الانصراف (بتصحيح ذاتي)</div>' +
+        '<div class="result-hero-sub">' + correctedTimeShort + ' — ' + shift + ' / ' + branch + '</div>' +
+      '</div>';
+
+      html += '<div class="result-rows">';
+      html += buildResultRow('⏱', 'ساعات العمل الفعلية', formatHoursAsTime(res.actualHours, true), 'info');
+      html += buildResultRow('🚀', 'أوفر تايم اليوم', formatHoursAsTime(res.overtimeHoursActual, true), 'info');
+      if (res.overtimeAppliedToDebt > 0) {
+        html += buildResultRow('✓', 'غطّى من الدين', 'تم تغطية ' + formatHoursAsTime(res.debtCoveredHours || 0, true) + ' دين', 'pos');
+      }
+      if (res.overtimePaidHours > 0) {
+        html += buildResultRow('💰', 'أوفر تايم مدفوع', formatHoursAsTime(res.overtimePaidHours) + ' (' + res.overtimePaidAmount + ' ج.م)', 'pos');
+      }
+      if (res.hoursBeyondOvertimeCap && res.hoursBeyondOvertimeCap > 0) {
+        html += buildResultRow('📌', 'ساعات خارج حدود الأوفر تايم', formatHoursAsTime(res.hoursBeyondOvertimeCap, true), 'warn');
+      }
+      const debtColor = res.currentBalance > 0 ? 'neg' : 'pos';
+      html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'رصيد الدين الحالي', formatHoursAsTime(res.currentBalance, true), debtColor);
+      html += '</div>';
+
+      showResult(true, html);
+      refreshStatus();
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '✅ تأكيد الانصراف';
+      alert('خطأ: ' + err.message);
+    });
   }
 
   /** بند 40: بناء صف واحد في نتيجة الانصراف — أيقونة ملوّنة + تسمية + قيمة */

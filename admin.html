@@ -829,6 +829,16 @@ input:checked + .slider:before { transform:translateX(-20px); }
 }
 .shift-branch::before { content:"·"; margin:0 4px; opacity:.5; }
 
+/* بند 43: بادج التصحيح الذاتي */
+.self-corrected-badge {
+  margin-right:auto;
+  background:#fef8e8; color:#B9770E;
+  border:1.5px solid #f0d68c;
+  border-radius:14px; padding:3px 10px;
+  font-size:.7rem; font-weight:900;
+  cursor:help;
+}
+
 /* ---------- شريط الأوقات (Timeline) — نمط أفقي أنيق ---------- */
 .times-strip {
   background:#fbfcfa; border-radius:var(--radius-sm);
@@ -1625,11 +1635,13 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       }
       const group = dayGroups[dayKey];
       if (!group.shifts[e.recordId]) {
-        group.shifts[e.recordId] = { recordId: e.recordId, branch: e.branch, shift: e.shift, checkin: null, checkout: null };
+        group.shifts[e.recordId] = { recordId: e.recordId, branch: e.branch, shift: e.shift, checkin: null, checkout: null, selfCorrected: null };
         group.shiftOrder.push(e.recordId);
       }
       if (e.type === 'حضور') group.shifts[e.recordId].checkin = e;
       else group.shifts[e.recordId].checkout = e;
+      // بند 43: نلتقط علامة التصحيح الذاتي من أي حدث فيه المعلومة
+      if (e.selfCorrected) group.shifts[e.recordId].selfCorrected = e.selfCorrected;
     });
 
     let html = '';
@@ -1649,10 +1661,11 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
         const s = group.shifts[recordId];
         html += '<div class="shift-block-v2">';
 
-        // ترويسة الشيفت — بادج للشيفت + اسم الفرع
+        // ترويسة الشيفت — بادج للشيفت + اسم الفرع + بادج التصحيح الذاتي (لو موجود)
         html += '<div class="shift-header-v2">' +
           '<span class="shift-badge">🕐 ' + s.shift + '</span>' +
           '<span class="shift-branch">' + s.branch + '</span>' +
+          (s.selfCorrected ? '<span class="self-corrected-badge" title="' + s.selfCorrected + '">✏️ تصحيح ذاتي</span>' : '') +
         '</div>';
 
         // شريط الأوقات — كل زمن في سطر لوحده مع أيقونته وملاحظته
