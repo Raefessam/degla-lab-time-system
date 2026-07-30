@@ -2221,6 +2221,10 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     html += '<div class="mini-stat info"><div class="mini-stat-num">' + formatHoursAsTime(r.attendanceSummary.totalHours) + '</div><div class="mini-stat-lbl">إجمالي الساعات</div></div>';
     html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.lateCount + '</div><div class="mini-stat-lbl">مرات تأخير</div></div>';
     html += '<div class="mini-stat warn"><div class="mini-stat-num">' + r.attendanceSummary.earlyDepartureCount + '</div><div class="mini-stat-lbl">انصراف مبكر</div></div>';
+    // بند 42: كارت ساعات خارج حدود الأوفر تايم — يظهر فقط لو > 0 (شفافية إدارية)
+    if (r.attendanceSummary.hoursBeyondOvertimeCap && r.attendanceSummary.hoursBeyondOvertimeCap > 0) {
+      html += '<div class="mini-stat warn"><div class="mini-stat-num">' + formatHoursAsTime(r.attendanceSummary.hoursBeyondOvertimeCap) + '</div><div class="mini-stat-lbl">ساعات خارج حدود الأوفر تايم</div></div>';
+    }
     html += '</div></div>';
 
     // === ب. الدين والتعويض ===

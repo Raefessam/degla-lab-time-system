@@ -1056,6 +1056,10 @@ body > * { flex-shrink:0; }
           if (res.earlyDepartureHours > 0) {
             html += buildResultRow('⏳', 'انصراف مبكر', formatHoursAsTime(res.earlyDepartureHours, true), 'warn');
           }
+          // بند 42: ساعات خارج حدود الأوفر تايم — تظهر فقط لو > 0 (شفافية إدارية، لا تُدفع)
+          if (res.hoursBeyondOvertimeCap && res.hoursBeyondOvertimeCap > 0) {
+            html += buildResultRow('📌', 'ساعات خارج حدود الأوفر تايم', formatHoursAsTime(res.hoursBeyondOvertimeCap, true), 'warn');
+          }
           const debtColor = res.currentBalance > 0 ? 'neg' : 'pos';
           html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'رصيد الدين الحالي', formatHoursAsTime(res.currentBalance, true), debtColor);
           html += '</div>';
