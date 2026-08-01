@@ -766,7 +766,7 @@ body > * { flex-shrink:0; }
       <div class="stitle">🕐 تسجيل حضور</div>
       <div class="fg">
         <label>الفرع</label>
-        <select id="branch" onchange="updateTimingBadge()">
+        <select id="branch" onchange="saveShiftPreferences(); updateTimingBadge();">
           <option value="زهراء المعادي">زهراء المعادي</option>
           <option value="كوتسيكا">كوتسيكا</option>
           <option value="كورنيش طرة">كورنيش طرة</option>
@@ -774,7 +774,7 @@ body > * { flex-shrink:0; }
       </div>
       <div class="fg">
         <label>الشيفت</label>
-        <select id="shift" onchange="updateTimingBadge()">
+        <select id="shift" onchange="saveShiftPreferences(); updateTimingBadge();">
           <option value="شيفت 1">شيفت 1</option>
           <option value="شيفت 2">شيفت 2</option>
         </select>
@@ -1027,6 +1027,7 @@ body > * { flex-shrink:0; }
         document.getElementById('loginCard').style.display = 'none';
         document.getElementById('mainCard').style.display = 'block';
         startClock();
+        restoreShiftPreferences(); // بند 44: استرجاع اختيار الفرع والشيفت المحفوظ
         refreshStatus();
       })
       .catch(err => {
@@ -1083,6 +1084,16 @@ body > * { flex-shrink:0; }
   function doCheckIn() {
     const branch = document.getElementById('branch').value;
     const shift = document.getElementById('shift').value;
+
+    // بند 44: تأكيد الاختيار قبل التسجيل (يمنع التسجيل بالخطأ في فرع/شيفت غلط)
+    const confirmMsg = 'تأكيد تسجيل حضور:\n\n' +
+                       '🏢 الفرع: ' + branch + '\n' +
+                       '🕐 الشيفت: ' + shift + '\n\n' +
+                       'هل الاختيار صحيح؟';
+    if (!confirm(confirmMsg)) return;
+
+    saveShiftPreferences(); // بند 44: حفظ الاختيار المؤكَّد
+
     const btn = document.getElementById('checkinBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
@@ -1364,6 +1375,46 @@ body > * { flex-shrink:0; }
   function toMins_(hhmm) {
     const [h, m] = hhmm.split(':').map(Number);
     return h * 60 + m;
+  }
+
+  /**
+   * بند 44: حفظ اختيار الفرع والشيفت في المتصفح لكل موظف على حدة
+   * (يمنع ضياع الاختيار لو الصفحة اتحمّلت تاني أو الـselect عمل reset)
+   */
+  function saveShiftPreferences() {
+    if (!currentEmployeeId) return;
+    try {
+      const branch = document.getElementById('branch').value;
+      const shift = document.getElementById('shift').value;
+      const key = 'shiftPref_' + currentEmployeeId;
+      localStorage.setItem(key, JSON.stringify({ branch, shift, ts: Date.now() }));
+    } catch (e) {
+      // localStorage قد يكون معطّل في بعض المتصفحات (private mode) — نتجاهل بصمت
+    }
+  }
+
+  /**
+   * بند 44: استرجاع اختيار الفرع والشيفت المحفوظ للموظف الحالي
+   * يشتغل تلقائيًا بعد تسجيل الدخول
+   */
+  function restoreShiftPreferences() {
+    if (!currentEmployeeId) return;
+    try {
+      const key = 'shiftPref_' + currentEmployeeId;
+      const stored = localStorage.getItem(key);
+      if (!stored) return;
+      const pref = JSON.parse(stored);
+      // تجاهل الاختيار لو أقدم من 30 يوم (قد يكون الموظف انتقل لفرع تاني)
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - pref.ts > THIRTY_DAYS) return;
+
+      const branchEl = document.getElementById('branch');
+      const shiftEl = document.getElementById('shift');
+      if (branchEl && pref.branch) branchEl.value = pref.branch;
+      if (shiftEl && pref.shift) shiftEl.value = pref.shift;
+    } catch (e) {
+      // تجاهل بصمت
+    }
   }
 
   function updateTimingBadge() {
