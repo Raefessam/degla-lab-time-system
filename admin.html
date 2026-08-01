@@ -415,7 +415,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 .alert-icon-v2 { font-size:1.15rem; flex-shrink:0; }
 .alert-msg-v2 { flex:1; line-height:1.5; }
 
-/* ---------- قسم الفروع النشطة (v2) ---------- */
+/* ---------- بند 45: قسم التقرير اليومي حسب الفرع ---------- */
 .section-title {
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:12px;
@@ -431,42 +431,94 @@ input:checked + .slider:before { transform:translateX(-20px); }
   font-size:.95rem;
 }
 
-.branch-card {
+/* فلتر اختيار التاريخ */
+.daily-report-filter {
+  display:flex; align-items:center; gap:10px;
+  background:white; border:1.5px solid var(--b3);
+  border-radius:12px; padding:10px 14px;
+  margin-bottom:14px;
+}
+.daily-report-filter label {
+  font-size:.78rem; font-weight:800; color:var(--m); flex-shrink:0;
+}
+.daily-report-filter input[type=date] {
+  flex:1; border:1.5px solid var(--b3); border-radius:8px;
+  padding:7px 10px; font-family:"Cairo",sans-serif;
+  font-size:.8rem; font-weight:700; color:var(--t);
+  outline:none; background:#fafafa;
+}
+.daily-report-filter input[type=date]:focus { border-color:var(--g); }
+
+/* كارت الفرع */
+.branch-report-card {
   background:white; border-radius:var(--radius-md);
-  padding:14px; margin-bottom:10px;
+  padding:14px; margin-bottom:12px;
   box-shadow:var(--shadow-sm); border:1.5px solid var(--b3);
   border-right:4px solid var(--g);
 }
-.branch-card:last-child { margin-bottom:0; }
-.branch-header {
+.branch-report-card:last-child { margin-bottom:0; }
+.branch-report-header {
   display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:10px;
+  margin-bottom:10px; padding-bottom:10px;
+  border-bottom:1.5px dashed var(--b3);
 }
-.branch-name-v2 {
-  font-weight:900; font-size:.88rem; color:var(--t);
-  display:flex; align-items:center; gap:8px;
+.branch-report-name {
+  font-weight:900; font-size:.9rem; color:var(--t);
 }
-.branch-count {
+.branch-report-count {
   background:var(--gl); color:var(--gd);
   border-radius:20px; padding:3px 12px;
   font-size:.72rem; font-weight:900;
 }
-.emp-list {
-  display:flex; flex-wrap:wrap; gap:6px;
+.branch-report-empty {
+  text-align:center; padding:16px;
+  color:var(--m); font-size:.78rem; font-weight:700;
 }
-.emp-chip-v2 {
-  background:var(--gp); border:1.5px solid var(--gl);
-  border-radius:20px; padding:6px 12px;
-  font-size:.75rem; font-weight:700; color:var(--t);
-  display:inline-flex; align-items:center; gap:6px;
+
+/* قائمة الموظفين داخل الفرع */
+.branch-report-list { display:flex; flex-direction:column; gap:10px; }
+.emp-report-row {
+  background:#fbfcfa; border:1.5px solid var(--b3);
+  border-radius:12px; padding:10px 12px;
 }
-.emp-chip-v2 .chip-avatar {
-  width:22px; height:22px; border-radius:50%;
+.emp-report-top {
+  display:flex; align-items:center; gap:8px;
+  flex-wrap:wrap; margin-bottom:8px;
+}
+.emp-report-avatar {
+  width:26px; height:26px; border-radius:50%;
   background:var(--gd); color:white;
   display:flex; align-items:center; justify-content:center;
-  font-size:.7rem; font-weight:900;
+  font-size:.68rem; font-weight:900; flex-shrink:0;
 }
-.emp-chip-v2 .chip-shift { color:var(--m); font-size:.68rem; }
+.emp-report-name {
+  font-weight:900; font-size:.82rem; color:var(--t);
+}
+.emp-report-shift {
+  background:var(--gp); color:var(--gd);
+  border-radius:10px; padding:2px 8px;
+  font-size:.68rem; font-weight:800;
+}
+.emp-report-status {
+  margin-right:auto;
+  font-size:.68rem; font-weight:900;
+  border-radius:10px; padding:2px 9px;
+}
+.emp-report-status.open { background:var(--gl); color:var(--gd); }
+.emp-report-status.closed { background:#eef1ec; color:var(--m); }
+
+/* شرائح تفاصيل الأداء */
+.emp-report-details { display:flex; flex-wrap:wrap; gap:6px; }
+.emp-detail-chip {
+  border-radius:10px; padding:4px 9px;
+  font-size:.7rem; font-weight:800;
+  display:inline-flex; align-items:center; gap:3px;
+}
+.emp-detail-chip.in { background:var(--gl); color:var(--gd); }
+.emp-detail-chip.out { background:var(--rl); color:var(--r); }
+.emp-detail-chip.late { background:#fef8e8; color:#B9770E; }
+.emp-detail-chip.ot { background:#e8f2fc; color:#1565c0; }
+.emp-detail-chip.hrs { background:#f1f3ef; color:var(--t); }
 
 .empty-v2 {
   background:white; border-radius:var(--radius-md);
@@ -1153,14 +1205,20 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   <!-- التنبيهات الذكية -->
   <div id="alertBar"></div>
 
-  <!-- الفروع النشطة -->
+  <!-- بند 45: التقرير اليومي حسب الفرع — يعرض كل حضور اليوم لكل فرع -->
   <div class="section-title">
     <div class="section-title-txt">
       <div class="section-title-icon">📍</div>
-      الفروع النشطة الآن
+      تقرير الحضور اليومي حسب الفرع
     </div>
   </div>
-  <div id="branchStatus"><div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div></div>
+
+  <div class="daily-report-filter">
+    <label>التاريخ</label>
+    <input type="date" id="dailyReportDate" onchange="loadDailyBranchReport()"/>
+  </div>
+
+  <div id="dailyBranchReport"><div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div></div>
 </div>
 
 <!-- بند 10 و7.3: يحتاج مراجعة -->
@@ -1445,14 +1503,103 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     activateTab(panelName);
   });
 
-  /** بند 18 + 37: تحميل وعرض شاشة الرئيسية المحسّنة (كروت + تنبيهات + حالة الفروع) */
+  /** بند 18 + 37 + 45: تحميل وعرض شاشة الرئيسية المحسّنة (كروت + تنبيهات + التقرير اليومي بالفروع) */
   function loadDashboard() {
     updateHeroGreeting(); // تحديث التحية والتاريخ فورًا
-    document.getElementById('branchStatus').innerHTML = '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
+
     apiCall('dashboardSummary')
       .then(renderDashboard)
-      .catch(err => document.getElementById('branchStatus').innerHTML =
+      .catch(err => document.getElementById('alertBar').innerHTML =
         '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
+
+    // بند 45: تعيين التاريخ الافتراضي = اليوم، وتحميل التقرير اليومي
+    const dateInput = document.getElementById('dailyReportDate');
+    if (dateInput && !dateInput.value) {
+      const now = new Date();
+      const cairoDateStr = Utilities_formatLocalDate(now);
+      dateInput.value = cairoDateStr;
+    }
+    loadDailyBranchReport();
+  }
+
+  /** بند 45: تنسيق تاريخ اليوم بتوقيت القاهرة لملء حقل input[type=date] الافتراضي */
+  function Utilities_formatLocalDate(d) {
+    const cairoStr = d.toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' }); // en-CA بيرجع YYYY-MM-DD
+    return cairoStr;
+  }
+
+  /** بند 45: تحميل تقرير الحضور اليومي مجمّع حسب الفرع، لتاريخ معيّن */
+  function loadDailyBranchReport() {
+    const dateInput = document.getElementById('dailyReportDate');
+    const dateStr = dateInput ? dateInput.value : '';
+    const box = document.getElementById('dailyBranchReport');
+    box.innerHTML = '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
+
+    apiCall('dailyBranchReport', dateStr ? { date: dateStr } : {})
+      .then(renderDailyBranchReport)
+      .catch(err => box.innerHTML =
+        '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
+  }
+
+  /** بند 45: عرض التقرير اليومي — كارت لكل فرع فيه كل الموظفين اللي اشتغلوا فيه اليوم المختار */
+  function renderDailyBranchReport(data) {
+    const box = document.getElementById('dailyBranchReport');
+    let html = '';
+
+    data.branches.forEach(b => {
+      html += '<div class="branch-report-card">';
+      html += '<div class="branch-report-header">' +
+        '<div class="branch-report-name">🏢 ' + b.branch + '</div>' +
+        '<div class="branch-report-count">' + b.count + ' موظف</div>' +
+      '</div>';
+
+      if (b.count === 0) {
+        html += '<div class="branch-report-empty">لا يوجد حضور مسجَّل في هذا اليوم</div>';
+      } else {
+        html += '<div class="branch-report-list">';
+        b.employees.forEach(e => {
+          const initials = getInitials(e.employeeName);
+          html += '<div class="emp-report-row">';
+
+          // ترويسة الموظف — الاسم + الشيفت + حالة (لسه شغال / خلص)
+          html += '<div class="emp-report-top">' +
+            '<span class="emp-report-avatar">' + initials + '</span>' +
+            '<span class="emp-report-name">' + e.employeeName + '</span>' +
+            '<span class="emp-report-shift">' + e.shift + '</span>';
+          if (e.isOpen) {
+            html += '<span class="emp-report-status open">🟢 شغال دلوقتي</span>';
+          } else {
+            html += '<span class="emp-report-status closed">✅ خلص</span>';
+          }
+          if (e.selfCorrected) {
+            html += '<span class="self-corrected-badge" title="' + e.selfCorrected + '">✏️ تصحيح ذاتي</span>';
+          }
+          html += '</div>';
+
+          // شريط التفاصيل — دخول / خروج / تأخير / أوفر تايم / ساعات فعلية
+          html += '<div class="emp-report-details">';
+          html += '<span class="emp-detail-chip in">🟢 ' + e.checkInTime + '</span>';
+          html += '<span class="emp-detail-chip out">🔴 ' + (e.checkOutTime || '—') + '</span>';
+          if (e.lateMinutes > 0) {
+            html += '<span class="emp-detail-chip late">⚠️ تأخير ' + e.lateMinutes + ' د</span>';
+          }
+          if (e.overtimeHours > 0) {
+            html += '<span class="emp-detail-chip ot">🚀 أوفر ' + formatHoursAsTime(e.overtimeHours) + '</span>';
+          }
+          if (e.actualHours !== null) {
+            html += '<span class="emp-detail-chip hrs">⏱ ' + formatHoursAsTime(e.actualHours) + '</span>';
+          }
+          html += '</div>';
+
+          html += '</div>'; // نهاية emp-report-row
+        });
+        html += '</div>'; // نهاية branch-report-list
+      }
+
+      html += '</div>'; // نهاية branch-report-card
+    });
+
+    box.innerHTML = html;
   }
 
   /** بند 37: تحديث الشريط الترحيبي بالتحية المناسبة للوقت والتاريخ */
@@ -1500,32 +1647,6 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       });
       html += '</div>';
       alertBar.innerHTML = html;
-    }
-
-    // بند 37: كارتات الفروع بالتصميم الجديد + Avatars
-    const branchBox = document.getElementById('branchStatus');
-    if (!data.branches || data.branches.length === 0) {
-      branchBox.innerHTML = '<div class="empty-v2"><div class="empty-icon">🌙</div><div class="empty-txt">مفيش أي موظف شغال دلوقتي</div></div>';
-    } else {
-      let html = '';
-      data.branches.forEach(b => {
-        html += '<div class="branch-card">' +
-          '<div class="branch-header">' +
-            '<div class="branch-name-v2">📍 ' + b.branch + '</div>' +
-            '<div class="branch-count">' + b.employees.length + ' موظف</div>' +
-          '</div>' +
-          '<div class="emp-list">';
-        b.employees.forEach(e => {
-          const initials = getInitials(e.name);
-          html += '<span class="emp-chip-v2">' +
-            '<span class="chip-avatar">' + initials + '</span>' +
-            e.name +
-            ' <span class="chip-shift">— ' + e.shift + '</span>' +
-          '</span>';
-        });
-        html += '</div></div>';
-      });
-      branchBox.innerHTML = html;
     }
   }
 
