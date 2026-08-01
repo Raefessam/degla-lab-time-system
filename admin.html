@@ -1507,19 +1507,28 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   function loadDashboard() {
     updateHeroGreeting(); // تحديث التحية والتاريخ فورًا
 
-    apiCall('dashboardSummary')
-      .then(renderDashboard)
-      .catch(err => document.getElementById('alertBar').innerHTML =
-        '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
-
-    // بند 45: تعيين التاريخ الافتراضي = اليوم، وتحميل التقرير اليومي
+    // بند 46: تعيين التاريخ الافتراضي = اليوم
     const dateInput = document.getElementById('dailyReportDate');
     if (dateInput && !dateInput.value) {
       const now = new Date();
-      const cairoDateStr = Utilities_formatLocalDate(now);
-      dateInput.value = cairoDateStr;
+      dateInput.value = Utilities_formatLocalDate(now);
     }
-    loadDailyBranchReport();
+
+    document.getElementById('dailyBranchReport').innerHTML =
+      '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
+
+    // بند 46: طلب واحد مدمج بدل طلبين منفصلين — أسرع بشكل ملحوظ في التحميل الأول
+    apiCall('dashboardFull', dateInput && dateInput.value ? { date: dateInput.value } : {})
+      .then(data => {
+        renderDashboard(data.summary);
+        renderDailyBranchReport(data.dailyReport);
+      })
+      .catch(err => {
+        document.getElementById('alertBar').innerHTML =
+          '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
+        document.getElementById('dailyBranchReport').innerHTML =
+          '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
+      });
   }
 
   /** بند 45: تنسيق تاريخ اليوم بتوقيت القاهرة لملء حقل input[type=date] الافتراضي */
