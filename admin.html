@@ -1120,6 +1120,33 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     0% { transform:translateX(-100%); }
     100% { transform:translateX(350%); }
 }
+
+/* ---------- بند 47: زرار فتح/إغلاق نموذج إضافة موظف ---------- */
+.add-emp-toggle-btn {
+    width:100%; padding:14px 16px;
+    background:linear-gradient(135deg, var(--gd), var(--g));
+    color:white; border:none; border-radius:16px;
+    font-family:"Cairo",sans-serif; font-size:.92rem; font-weight:900;
+    cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+    box-shadow:0 4px 14px rgba(78,144,18,.25);
+}
+.add-emp-toggle-btn:active { transform:scale(.98); }
+.add-emp-toggle-icon {
+    width:32px; height:32px; border-radius:10px;
+    background:rgba(255,255,255,.22);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; flex-shrink:0;
+}
+.add-emp-toggle-txt { flex:1; text-align:right; }
+.add-emp-toggle-arrow {
+    font-size:1.1rem; font-weight:900; opacity:.85;
+    transition:transform .25s;
+}
+.add-emp-toggle-btn.open .add-emp-toggle-arrow {
+    transform:rotate(-90deg);
+}
 </style>
 </head>
 <body>
@@ -1268,7 +1295,14 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
 
 <!-- بند 8: إدارة الموظفين -->
 <div class="panel" id="panel-employees">
-  <div class="card">
+  <!-- بند 47: زرار فتح نموذج إضافة موظف (بدل ما يكون النموذج مفتوح دايمًا) -->
+  <button class="add-emp-toggle-btn" id="addEmpToggleBtn" onclick="toggleAddEmpForm()">
+    <span class="add-emp-toggle-icon">➕</span>
+    <span class="add-emp-toggle-txt">إضافة موظف جديد</span>
+    <span class="add-emp-toggle-arrow">‹</span>
+  </button>
+
+  <div class="card" id="addEmpCard" style="display:none;">
     <div class="stitle">إضافة موظف جديد</div>
     <div class="shint">كود الموظف يُولَّد تلقائيًا (E001، E002...) — بند 13.1. الفرع/الشيفت يختارهما الموظف بنفسه عند كل حضور.</div>
     <div class="fg"><label>الاسم الثلاثي</label><input type="text" id="newName"></div>
@@ -1343,7 +1377,14 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     <div id="unifiedReqList"><div class="empty">جاري التحميل...</div></div>
   </div>
 
-  <div class="card">
+  <!-- بند 48: زرار فتح نموذج تسجيل الغياب اليدوي (بدل ما يكون مفتوح دايمًا) -->
+  <button class="add-emp-toggle-btn" id="manualAbsToggleBtn" onclick="toggleManualAbsForm()">
+    <span class="add-emp-toggle-icon">📋</span>
+    <span class="add-emp-toggle-txt">تسجيل حالة غياب يدويًا</span>
+    <span class="add-emp-toggle-arrow">‹</span>
+  </button>
+
+  <div class="card" id="manualAbsCard" style="display:none;">
     <div class="stitle">تسجيل حالة غياب يدويًا (بند 12)</div>
     <div class="shint">استخدم هذه الشاشة عند تواصل الموظف معك (واتساب/مكالمة) بخصوص غيابه، أو عند تسجيل غياب بدون أي تواصل خالص.</div>
     <div class="row2">
@@ -1463,7 +1504,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     if (panelName === 'home') loadDashboard();
     if (panelName === 'employees') loadEmployeeList();
     if (panelName === 'attlog') loadAttendanceLog();
-    if (panelName === 'absence') loadUnifiedRequests();
+    if (panelName === 'absence') { setReqFilter('all'); loadUnifiedRequests(); }
     if (panelName === 'reports') {
       initReportPickers();
       if (!cachedEmployees || cachedEmployees.length === 0) loadEmployeeList();
@@ -1942,6 +1983,23 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       .catch(err => showMsg('mcMsg', false, err.message));
   }
 
+  /** بند 47: فتح/إغلاق نموذج إضافة موظف — يفضل مطوي افتراضيًا لتوفير مساحة الشاشة */
+  function toggleAddEmpForm() {
+    const card = document.getElementById('addEmpCard');
+    const btn = document.getElementById('addEmpToggleBtn');
+    const isOpen = card.style.display !== 'none';
+
+    if (isOpen) {
+      card.style.display = 'none';
+      btn.classList.remove('open');
+    } else {
+      card.style.display = 'block';
+      btn.classList.add('open');
+      // Scroll سلس للنموذج بعد ما يفتح عشان يبان كامل
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+  }
+
   function submitAddEmployee() {
     const data = {
       name: document.getElementById('newName').value,
@@ -1961,6 +2019,13 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
         document.getElementById('newPhone').value = '';
         document.getElementById('newHireDate').value = '';
         loadEmployeeList();
+        // بند 47: إغلاق النموذج تلقائيًا بعد نجاح الإضافة (بعد مهلة قصيرة عشان الرسالة تبان)
+        setTimeout(() => {
+          const card = document.getElementById('addEmpCard');
+          const btn = document.getElementById('addEmpToggleBtn');
+          if (card) card.style.display = 'none';
+          if (btn) btn.classList.remove('open');
+        }, 2000);
       })
       .catch(err => showMsg('addEmpMsg', false, err.message));
   }
@@ -2154,13 +2219,43 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
+  /** بند 48: فتح/إغلاق نموذج تسجيل الغياب اليدوي — يفضل مطوي افتراضيًا لتوفير مساحة الشاشة */
+  function toggleManualAbsForm() {
+    const card = document.getElementById('manualAbsCard');
+    const btn = document.getElementById('manualAbsToggleBtn');
+    const isOpen = card.style.display !== 'none';
+
+    if (isOpen) {
+      card.style.display = 'none';
+      btn.classList.remove('open');
+    } else {
+      card.style.display = 'block';
+      btn.classList.add('open');
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+  }
+
+  /** بند 48: إغلاق نموذج الغياب اليدوي تلقائيًا بعد نجاح التسجيل (بعد مهلة قصيرة عشان الرسالة تبان) */
+  function closeManualAbsFormDelayed() {
+    setTimeout(() => {
+      const card = document.getElementById('manualAbsCard');
+      const btn = document.getElementById('manualAbsToggleBtn');
+      if (card) card.style.display = 'none';
+      if (btn) btn.classList.remove('open');
+    }, 2000);
+  }
+
   function submitRequestAbsence() {
     const empId = document.getElementById('newAbsEmpId').value.trim();
     const date = document.getElementById('newAbsDate').value.trim();
     if (!empId || !date) return showMsg('newAbsMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
 
     apiCall('requestAbsence', { employeeId: empId, date })
-      .then(res => { showMsg('newAbsMsg', true, 'تم تسجيل طلب الإجازة — حالته: قيد الانتظار.'); loadUnifiedRequests(); })
+      .then(res => {
+        showMsg('newAbsMsg', true, 'تم تسجيل طلب الإجازة — حالته: قيد الانتظار.');
+        loadUnifiedRequests();
+        closeManualAbsFormDelayed();
+      })
       .catch(err => showMsg('newAbsMsg', false, err.message));
   }
 
@@ -2170,7 +2265,11 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     if (!empId || !date) return showMsg('newAbsMsg', false, 'من فضلك اكمل كود الموظف والتاريخ');
 
     apiCall('markUnauthorizedAbsence', { employeeId: empId, date })
-      .then(res => showMsg('newAbsMsg', true, 'تم تسجيل غياب بدون إذن مباشرة.'))
+      .then(res => {
+        showMsg('newAbsMsg', true, 'تم تسجيل غياب بدون إذن مباشرة.');
+        loadUnifiedRequests();
+        closeManualAbsFormDelayed();
+      })
       .catch(err => showMsg('newAbsMsg', false, err.message));
   }
 
