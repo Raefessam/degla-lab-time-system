@@ -989,7 +989,11 @@ input:checked + .slider:before { transform:translateX(-20px); }
    ══════════════════════════════════════════════════════════ */
 
 /* توسيع مساحة أسفل الصفحة عشان الـBottom Nav ما يغطيش المحتوى */
-body { padding-bottom:calc(96px + var(--safe-bottom)); }
+/* بند 51: زيادة الهامش لضمان مساحة كافية على كل الأجهزة (خصوصًا Android WebView القديم) */
+body { padding-bottom:calc(130px + var(--safe-bottom)); }
+
+/* بند 51: مساحة أمان إضافية في آخر الصفحات الطويلة (تقارير، طلبات) — تمنع التصاق آخر عنصر بشريط التنقل */
+.bottom-safety-spacer { height:40px; width:100%; }
 
 /* ---------- الهيدر البراند الجديد (أخضر متدرج + لوجو + اسم إنجليزي) ---------- */
 .brand-header {
@@ -1397,6 +1401,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
     </div>
     <div class="msg" id="newAbsMsg"></div>
   </div>
+  <div class="bottom-safety-spacer"></div>
 </div>
 
 <!-- بند 12 + 37: التقرير الشهري المحسّن -->
@@ -1427,6 +1432,7 @@ body { padding-bottom:calc(96px + var(--safe-bottom)); }
   </div>
 
   <div id="reportResult"></div>
+  <div class="bottom-safety-spacer"></div>
 </div>
 
 <div class="footer">Infinite Systems — دجله لاب</div>
