@@ -1982,22 +1982,44 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     let html = '<table class="data-table"><tr><th>الموظف</th><th>التاريخ</th><th>الشيفت</th><th>الفرع</th><th>الحالة</th><th></th></tr>';
     items.forEach(r => {
       const isNormalOpen = r.DayStatus === 'قيد الانتظار';
-      const badgeClass = isNormalOpen ? 'bg' : 'br2';
-      const icon = isNormalOpen ? '🕓' : '⚠️';
+      // بند 58: خلل بيانات — يظهر بلون مميز (أحمر غامق) ويحتاج إجراء مختلف
+      const isDataIntegrityIssue = String(r.DayStatus).indexOf('خلل بيانات') === 0;
+
+      let badgeClass, icon, actionBtn;
+      if (isDataIntegrityIssue) {
+        badgeClass = 'br2';
+        icon = '🔴';
+        actionBtn = '<button class="mini-btn" style="background:var(--rl); color:var(--r); border-color:var(--r);" ' +
+          'onclick="reopenAnomalyRecord(\'' + r.RecordID + '\')" title="بيرجّع السجل لحالة مفتوحة عشان تقدر تسجل وقت الانصراف الصحيح">' +
+          '🔓 إعادة فتح للتصحيح</button>';
+      } else {
+        badgeClass = isNormalOpen ? 'bg' : 'br2';
+        icon = isNormalOpen ? '🕓' : '⚠️';
+        actionBtn = '<button class="mini-btn" onclick="openManualCheckout(\'' + r.RecordID + '\')">تسجيل يدوي</button>';
+      }
+
       // بند 42: عرض الاسم + الكود + التاريخ المنسّق بصيغة مقروءة
       const empDisplay = r.EmployeeName ? (r.EmployeeName + ' <span style="color:var(--m); font-size:.72rem;">(' + r.EmployeeID + ')</span>') : r.EmployeeID;
       const dateDisplay = formatReviewDate(r.Date);
-      html += '<tr>' +
+      html += '<tr' + (isDataIntegrityIssue ? ' style="background:#fef5f5;"' : '') + '>' +
         '<td>' + empDisplay + '</td>' +
         '<td>' + dateDisplay + '</td>' +
         '<td>' + r.Shift + '</td>' +
         '<td>' + r.Branch + '</td>' +
         '<td><span class="badge ' + badgeClass + '">' + icon + ' ' + r.DayStatus + '</span></td>' +
-        '<td><button class="mini-btn" onclick="openManualCheckout(\'' + r.RecordID + '\')">تسجيل يدوي</button></td>' +
+        '<td>' + actionBtn + '</td>' +
         '</tr>';
     });
     html += '</table>';
     box.innerHTML = html;
+  }
+
+  /** بند 58: إعادة فتح سجل خلل البيانات — بعدها يقدر صاحب العمل يستخدم "تسجيل يدوي" العادي */
+  function reopenAnomalyRecord(recordId) {
+    if (!confirm('هيتم إعادة فتح السجل ده عشان تقدر تسجل وقت الانصراف الصحيح. متأكد؟')) return;
+    apiCall('reopenAnomalyRecord', { recordId, admin: 'صاحب العمل' })
+      .then(() => { loadReviewList(); })
+      .catch(err => alert('خطأ: ' + err.message));
   }
 
   /** بند 42: تنسيق التاريخ بصيغة مقروءة (مثلاً "27 يوليو 2026") */
