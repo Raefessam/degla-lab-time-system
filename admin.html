@@ -1466,12 +1466,24 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     }
   }
 
-  function apiCall(action, params) {
-    const url = new URL(APPS_SCRIPT_URL);
-    url.searchParams.set('action', action);
+  /**
+   * بند 54: بناء الرابط يدويًا بدل new URL() — بعض إصدارات Safari على iOS بيحصل فيها
+   * خلل متقطع نادر في URL constructor بيرمي "The string did not match the expected pattern"
+   * حتى مع روابط صحيحة 100%. البناء اليدوي بيتفادى المشكلة دي تمامًا لأنه مش بيستخدم
+   * الـAPI اللي فيه الخلل، مع نفس النتيجة بالظبط (رابط + query params مُرمّزة بأمان).
+   */
+  function buildApiUrl_(action, params) {
+    let url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action);
     Object.keys(params || {}).forEach(k => {
-      if (params[k] !== null && params[k] !== undefined) url.searchParams.set(k, params[k]);
+      if (params[k] !== null && params[k] !== undefined) {
+        url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+      }
     });
+    return url;
+  }
+
+  function apiCall(action, params) {
+    const url = buildApiUrl_(action, params);
     showLoadingBar();
     return fetch(url).then(r => r.json()).then(data => {
       hideLoadingBar();
