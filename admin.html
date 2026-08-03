@@ -45,7 +45,15 @@
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
-body { padding:max(env(safe-area-inset-top, 0px), 20px) 14px 40px; max-width:900px; margin:0 auto; }
+body {
+    padding:max(env(safe-area-inset-top, 0px), 20px) 14px 40px; max-width:900px; margin:0 auto;
+    /* بند 57 (تصحيح بند 55): شلنا transform من هنا لأنها كانت بتكسر position:fixed
+       الخاص بشريط التنقل السفلي (أي transform على عنصر أب بيخلي أي fixed جواه
+       يتصرف كـ absolute نسبةً له بدل الشاشة كلها). الحل الآمن دلوقتي على العناصر
+       المحدّدة اللي فيها backdrop-filter بس، مش على الـbody كلها. */
+    -webkit-overflow-scrolling:touch;
+}
+
 
 .hdr { text-align:center; padding:16px 0 18px; }
 .hdr h1 { color:var(--gd); font-size:1.1rem; font-weight:900; }
@@ -630,7 +638,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 }
 .salary-header-icon {
   width:32px; height:32px; border-radius:10px;
-  background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+  background:rgba(255,255,255,.22); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); -webkit-transform:translateZ(0); transform:translateZ(0);
   display:flex; align-items:center; justify-content:center;
   font-size:1rem; position:relative;
 }
@@ -714,7 +722,7 @@ input:checked + .slider:before { transform:translateX(-20px); }
 }
 .emp-avatar {
   width:52px; height:52px; border-radius:50%;
-  background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+  background:rgba(255,255,255,.22); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); -webkit-transform:translateZ(0); transform:translateZ(0);
   display:flex; align-items:center; justify-content:center;
   font-size:1.4rem; font-weight:900; flex-shrink:0;
   border:2px solid rgba(255,255,255,.28);
@@ -1041,7 +1049,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 }
 
 .brand-back-btn {
-  background:rgba(255,255,255,.2); backdrop-filter:blur(6px);
+  background:rgba(255,255,255,.2); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); -webkit-transform:translateZ(0); transform:translateZ(0);
   border:1.5px solid rgba(255,255,255,.28);
   color:white; width:36px; height:36px; border-radius:50%;
   cursor:pointer; font-size:1.15rem; font-weight:900;
@@ -1503,6 +1511,22 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   const navHistory = ['home'];
 
   /** تفعيل تاب معيّن — قلب المنطق. بيعمل التبديل البصري + تحميل بيانات التاب لو محتاج */
+  /**
+   * بند 56: كاش خفيف من ناحية الفرونت — يمنع إعادة التحميل الكامل (طلب API جديد)
+   * لو التاب اتفتح من أقل من 20 ثانية. ده بيخلي التنقل بين التابات "فوري" بعد أول تحميل،
+   * بدل ما كل ضغطة زرار تعمل رحلة شبكة كاملة جديدة حتى لو البيانات ما اتغيرتش.
+   * أزرار "تحديث" اليدوية بتفضل شغالة عادي لأنها بتنادي دوال التحميل مباشرة (بدون المرور بالفحص ده).
+   */
+  const __tabLastLoaded = {};
+  const TAB_CACHE_TTL_MS = 20000; // 20 ثانية
+
+  function shouldReloadTab_(panelName) {
+    const last = __tabLastLoaded[panelName] || 0;
+    const isFresh = (Date.now() - last) < TAB_CACHE_TTL_MS;
+    if (!isFresh) __tabLastLoaded[panelName] = Date.now();
+    return !isFresh;
+  }
+
   function activateTab(panelName) {
     // تحديث الأزرار: إظهار الجاي، إخفاء اللي عادي
     document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('act'));
@@ -1517,12 +1541,15 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     // Scroll لأعلى الصفحة لضمان تجربة نظيفة
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // تحميل البيانات المناسبة لكل تاب
-    if (panelName === 'review') loadReviewList();
-    if (panelName === 'home') loadDashboard();
-    if (panelName === 'employees') loadEmployeeList();
-    if (panelName === 'attlog') loadAttendanceLog();
-    if (panelName === 'absence') { setReqFilter('all'); loadUnifiedRequests(); }
+    // بند 56: تحميل البيانات فقط لو التاب مش "طازة" (اتفتح من أكتر من 20 ثانية أو أول مرة)
+    if (panelName === 'review' && shouldReloadTab_('review')) loadReviewList();
+    if (panelName === 'home' && shouldReloadTab_('home')) loadDashboard();
+    if (panelName === 'employees' && shouldReloadTab_('employees')) loadEmployeeList();
+    if (panelName === 'attlog' && shouldReloadTab_('attlog')) loadAttendanceLog();
+    if (panelName === 'absence') {
+      setReqFilter('all'); // بند 48: تحديث الفلتر مجاني (بدون شبكة) — يفضل يشتغل دايمًا بغض النظر عن الكاش
+      if (shouldReloadTab_('absence')) loadUnifiedRequests();
+    }
     if (panelName === 'reports') {
       initReportPickers();
       if (!cachedEmployees || cachedEmployees.length === 0) loadEmployeeList();
