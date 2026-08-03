@@ -39,11 +39,6 @@ body {
     padding-top:max(env(safe-area-inset-top, 0px), 20px);
     padding-bottom:32px;
     background:var(--gp);
-    /* بند 55: إصلاح خلل شهير في Safari على iOS — المحتوى بيفضل مش متجدد بصريًا (Repaint)
-       لحد ما يحصل لمس فعلي على الشاشة (سببه عناصر backdrop-filter بتعمل طبقة رسم منفصلة). */
-    -webkit-overflow-scrolling:touch;
-    -webkit-transform:translateZ(0);
-    transform:translateZ(0);
 }
 /* بند 40 fix: منع أي عنصر مباشر تحت body من الضغط (يحل مشكلة صغر الهيدر لما المحتوى طويل) */
 body > * { flex-shrink:0; }
@@ -162,7 +157,7 @@ body > * { flex-shrink:0; }
 }
 .emp-hero-avatar {
     width:56px; height:56px; border-radius:50%;
-    background:rgba(255,255,255,.22); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
     color:white; font-size:1.35rem; font-weight:900;
     display:flex; align-items:center; justify-content:center;
     flex-shrink:0; border:2px solid rgba(255,255,255,.28);
@@ -439,7 +434,7 @@ body > * { flex-shrink:0; }
 }
 .result-hero-icon {
     width:52px; height:52px; border-radius:50%;
-    background:rgba(255,255,255,.22); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
     display:flex; align-items:center; justify-content:center;
     font-size:1.6rem; margin:0 auto 8px;
     border:2px solid rgba(255,255,255,.28);
