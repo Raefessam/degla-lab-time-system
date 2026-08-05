@@ -1113,7 +1113,33 @@ body > * { flex-shrink:0; }
     }
   }
 
+  // بند 62: حارس فعلي ضد الضغط المزدوج — أقوى من الاعتماد على btn.disabled بس،
+  // لأن على الأجهزة البطيئة ممكن يحصل ضغط تاني قبل ما الزرار يتعطّل بصريًا
+  let isSubmittingCheckIn = false;
+  let isSubmittingCheckOut = false;
+
+  /**
+   * بند 62: رسالة انتظار ديناميكية بتطمّن الموظف إن التسجيل لسه شغال ومتضغطش تاني،
+   * بدل رسالة ثابتة "جاري التسجيل" اللي بتخلي الموظف يحس إن التطبيق "واقف".
+   */
+  function startReassuringLoader_(btn, baseLabel) {
+    let seconds = 0;
+    btn.innerHTML = '<span class="spinner"></span> ' + baseLabel;
+    const timer = setInterval(() => {
+      seconds++;
+      if (seconds === 3) {
+        btn.innerHTML = '<span class="spinner"></span> لسه بيتسجل... متضغطش تاني 🙏';
+      } else if (seconds === 7) {
+        btn.innerHTML = '<span class="spinner"></span> الاتصال بطيء شوية، برجاء الانتظار...';
+      }
+    }, 1000);
+    return () => clearInterval(timer); // دالة إيقاف المؤقّت
+  }
+
   function doCheckIn() {
+    // بند 62: منع فوري لأي ضغط تاني وإحنا لسه بنعالج الطلب الأول
+    if (isSubmittingCheckIn) return;
+
     const branch = document.getElementById('branch').value;
     const shift = document.getElementById('shift').value;
 
@@ -1126,12 +1152,15 @@ body > * { flex-shrink:0; }
 
     saveShiftPreferences(); // بند 44: حفظ الاختيار المؤكَّد
 
+    isSubmittingCheckIn = true;
     const btn = document.getElementById('checkinBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
+    const stopLoader = startReassuringLoader_(btn, 'جاري التسجيل');
 
     apiCall('checkIn', { employeeId: currentEmployeeId, branch, shift })
       .then(function(res){
+        stopLoader();
+        isSubmittingCheckIn = false;
         btn.disabled = false;
         btn.textContent = '✅ تسجيل حضور';
 
@@ -1146,6 +1175,8 @@ body > * { flex-shrink:0; }
         refreshStatus();
       })
       .catch(function(err){
+        stopLoader();
+        isSubmittingCheckIn = false;
         btn.disabled = false;
         btn.textContent = '✅ تسجيل حضور';
         showResult(false, err.message);
@@ -1160,15 +1191,21 @@ body > * { flex-shrink:0; }
   }
 
   function doCheckOut() {
+    // بند 62: منع فوري لأي ضغط تاني وإحنا لسه بنعالج الطلب الأول
+    if (isSubmittingCheckOut) return;
+    isSubmittingCheckOut = true;
+
     const btn = document.getElementById('checkoutBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> جاري التسجيل';
+    const stopLoader = startReassuringLoader_(btn, 'جاري التسجيل');
 
     const branch = currentStatus.openShift ? currentStatus.openShift.branch : null;
     const shift = currentStatus.openShift ? currentStatus.openShift.shift : null;
 
     apiCall('checkOut', { employeeId: currentEmployeeId, branch, shift })
       .then(function(res){
+        stopLoader();
+        isSubmittingCheckOut = false;
         btn.disabled = false;
         btn.textContent = '🚪 تسجيل انصراف';
 
@@ -1219,6 +1256,8 @@ body > * { flex-shrink:0; }
         refreshStatus();
       })
       .catch(function(err){
+        stopLoader();
+        isSubmittingCheckOut = false;
         btn.disabled = false;
         btn.textContent = '🚪 تسجيل انصراف';
         showResult(false, err.message);
