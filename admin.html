@@ -1490,10 +1490,24 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     return url;
   }
 
+  /**
+   * بند 61: إعادة محاولة تلقائية عند فشل الطلب بخطأ عابر (نفس الإصلاح المطبّق في شاشة الموظف).
+   */
+  function fetchWithRetry_(url, maxRetries) {
+    maxRetries = maxRetries === undefined ? 2 : maxRetries;
+    return fetch(url).then(r => r.json()).catch(err => {
+      if (maxRetries > 0) {
+        return new Promise(resolve => setTimeout(resolve, 900))
+          .then(() => fetchWithRetry_(url, maxRetries - 1));
+      }
+      throw err;
+    });
+  }
+
   function apiCall(action, params) {
     const url = buildApiUrl_(action, params);
     showLoadingBar();
-    return fetch(url).then(r => r.json()).then(data => {
+    return fetchWithRetry_(url).then(data => {
       hideLoadingBar();
       if (data && data.error) throw new Error(data.error);
       return data;
