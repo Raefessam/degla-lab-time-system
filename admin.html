@@ -1289,8 +1289,8 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     </div>
 
     <div class="att-mode-toggle">
-      <button class="att-mode-btn act" id="attFilterAll" onclick="setAttFilter('all')">📆 الكل</button>
-      <button class="att-mode-btn" id="attFilterToday" onclick="setAttFilter('today')">☀️ اليوم</button>
+      <button class="att-mode-btn" id="attFilterAll" onclick="setAttFilter('all')">📆 الكل</button>
+      <button class="att-mode-btn act" id="attFilterToday" onclick="setAttFilter('today')">☀️ اليوم</button>
     </div>
 
     <input type="date" id="attDatePicker" class="att-date-picker" onchange="setAttFilter('date')">
@@ -1837,7 +1837,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 
   // ---- بند 19: سجل الحضور — تحميل مرة واحدة، فلترة محلية بالكامل ----
   let cachedAttLog = [];
-  let attFilterMode = 'all'; // 'all' | 'today' | 'date'
+  let attFilterMode = 'today'; // بند 69: افتراضي "اليوم" بدل "الكل" — أسرع في العرض والرسم على الشاشة
   let attFilterDate = '';
 
   function loadAttendanceLog() {
