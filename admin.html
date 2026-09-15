@@ -1541,6 +1541,45 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     return !isFresh;
   }
 
+  /**
+   * بند 67: نمط "اعرض القديم فورًا، وحدّث بهدوء" (Stale-While-Revalidate) باستخدام
+   * localStorage — بيحل شكوى "الانتقال بين الصفحات بطيء" في الاستخدام الطبيعي
+   * (لما صاحب العمل بيروح تاب تاني بعد دقيقة أو دقيقتين، مش خلال 20 ثانية بس زي بند 56).
+   *
+   * الفكرة: أول ما يدخل أي تاب، نعرض فورًا آخر بيانات كانت معروضة فيه قبل كده (حتى لو
+   * قديمة شوية) من localStorage — الشاشة تبقى "فوري" بدل ما تفضل فاضية بـ"جاري التحميل".
+   * في نفس الوقت، بنجيب البيانات الجديدة الحقيقية في الخلفية، ولما توصل بنحدّث الشاشة
+   * بهدوء من غير ما يحس المستخدم بأي "قفزة" أو فلاش مزعج.
+   *
+   * @param {string} cacheKey   مفتاح فريد لكل نوع بيانات (زي 'dashboard', 'employees')
+   * @param {function} fetchFn  دالة بترجع Promise بالبيانات الجديدة من السيرفر
+   * @param {function} renderFn دالة بتاخد البيانات وتعرضها على الشاشة
+   */
+  function loadWithStaleCache_(cacheKey, fetchFn, renderFn) {
+    const storageKey = 'staleCache_' + cacheKey;
+
+    // الخطوة 1: لو فيه نسخة قديمة محفوظة، اعرضها فورًا (صفر انتظار محسوس)
+    try {
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        renderFn(JSON.parse(cached), true /* isStale */);
+      }
+    } catch (e) {
+      // لو localStorage معطّل (وضع تصفح خاص مثلاً) أو البيانات تالفة، نتجاهل بصمت ونكمل عادي
+    }
+
+    // الخطوة 2: نجيب البيانات الحقيقية الجديدة ونحدّث الشاشة + الكاش المحفوظ
+    return fetchFn().then(freshData => {
+      renderFn(freshData, false /* isStale */);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(freshData));
+      } catch (e) {
+        // لو فشل الحفظ (حد أقصى للمساحة مثلاً)، مش مشكلة — العرض نفسه اتحدث بنجاح
+      }
+      return freshData;
+    });
+  }
+
   function activateTab(panelName) {
     // تحديث الأزرار: إظهار الجاي، إخفاء اللي عادي
     document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('act'));
@@ -1613,22 +1652,30 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       const now = new Date();
       dateInput.value = Utilities_formatLocalDate(now);
     }
+    const dateParam = dateInput && dateInput.value ? { date: dateInput.value } : {};
+    const cacheKey = 'dashboard_' + (dateParam.date || 'today');
 
-    document.getElementById('dailyBranchReport').innerHTML =
-      '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
-
-    // بند 46: طلب واحد مدمج بدل طلبين منفصلين — أسرع بشكل ملحوظ في التحميل الأول
-    apiCall('dashboardFull', dateInput && dateInput.value ? { date: dateInput.value } : {})
-      .then(data => {
+    // بند 67: نعرض آخر بيانات معروفة فورًا (لو موجودة)، ونحدّثها بهدوء في الخلفية
+    loadWithStaleCache_(
+      cacheKey,
+      () => apiCall('dashboardFull', dateParam),
+      (data) => {
         renderDashboard(data.summary);
         renderDailyBranchReport(data.dailyReport);
-      })
-      .catch(err => {
+      }
+    ).catch(err => {
+      // بند 67: لو فيه بيانات قديمة كانت ظاهرة بالفعل، نسيبها زي ما هي بدل ما نمسحها
+      // برسالة خطأ مزعجة بسبب فشل عابر في التحديث بالخلفية
+      let hasStaleData = false;
+      try { hasStaleData = !!localStorage.getItem('staleCache_' + cacheKey); } catch (e) {}
+
+      if (!hasStaleData) {
         document.getElementById('alertBar').innerHTML =
           '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
         document.getElementById('dailyBranchReport').innerHTML =
           '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
-      });
+      }
+    });
   }
 
   /** بند 45: تنسيق تاريخ اليوم بتوقيت القاهرة لملء حقل input[type=date] الافتراضي */
@@ -1794,10 +1841,18 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   let attFilterDate = '';
 
   function loadAttendanceLog() {
-    document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div>';
-    apiCall('attendanceLog')
-      .then(events => { cachedAttLog = events || []; renderAttendanceLog(); })
-      .catch(err => document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>');
+    // بند 67: نعرض آخر سجل حضور معروف فورًا، ونحدّثه بهدوء في الخلفية
+    loadWithStaleCache_(
+      'attendanceLog',
+      () => apiCall('attendanceLog'),
+      (events) => { cachedAttLog = events || []; renderAttendanceLog(); }
+    ).catch(err => {
+      let hasStaleData = false;
+      try { hasStaleData = !!localStorage.getItem('staleCache_attendanceLog'); } catch (e) {}
+      if (!hasStaleData) {
+        document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
+      }
+    });
   }
 
   function setAttFilter(mode) {
@@ -1981,10 +2036,18 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   }
 
   function loadReviewList() {
-    document.getElementById('reviewList').innerHTML = '<div class="empty">جاري التحميل...</div>';
-    apiCall('reviewQueue')
-      .then(renderReviewList)
-      .catch(err => document.getElementById('reviewList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+    // بند 67: نعرض آخر قائمة مراجعة معروفة فورًا، ونحدّثها بهدوء في الخلفية
+    loadWithStaleCache_(
+      'reviewQueue',
+      () => apiCall('reviewQueue'),
+      renderReviewList
+    ).catch(err => {
+      let hasStaleData = false;
+      try { hasStaleData = !!localStorage.getItem('staleCache_reviewQueue'); } catch (e) {}
+      if (!hasStaleData) {
+        document.getElementById('reviewList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>';
+      }
+    });
   }
 
   function renderReviewList(items) {
@@ -2115,13 +2178,21 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 
   /** قائمة الموظفين بأسلوب R1 (بحث + كروت) — بند 8 */
   function loadEmployeeList() {
-    document.getElementById('empList').innerHTML = '<div class="empty">جاري التحميل...</div>';
-    apiCall('employees')
-      .then(emps => {
+    // بند 67: نعرض آخر قائمة موظفين معروفة فورًا، ونحدّثها بهدوء في الخلفية
+    loadWithStaleCache_(
+      'employees',
+      () => apiCall('employees'),
+      (emps) => {
         cachedEmployees = emps || [];
         renderEmployeeList(cachedEmployees, '');
-      })
-      .catch(err => document.getElementById('empList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+      }
+    ).catch(err => {
+      let hasStaleData = false;
+      try { hasStaleData = !!localStorage.getItem('staleCache_employees'); } catch (e) {}
+      if (!hasStaleData) {
+        document.getElementById('empList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>';
+      }
+    });
   }
 
   function searchEmployees(query) {
@@ -2359,10 +2430,18 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   let reqFilterMode = 'all';
 
   function loadUnifiedRequests() {
-    document.getElementById('unifiedReqList').innerHTML = '<div class="empty">جاري التحميل...</div>';
-    apiCall('unifiedRequests')
-      .then(reqs => { cachedRequests = reqs || []; renderUnifiedRequests(); })
-      .catch(err => document.getElementById('unifiedReqList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>');
+    // بند 67: نعرض آخر قائمة طلبات معروفة فورًا، ونحدّثها بهدوء في الخلفية
+    loadWithStaleCache_(
+      'unifiedRequests',
+      () => apiCall('unifiedRequests'),
+      (reqs) => { cachedRequests = reqs || []; renderUnifiedRequests(); }
+    ).catch(err => {
+      let hasStaleData = false;
+      try { hasStaleData = !!localStorage.getItem('staleCache_unifiedRequests'); } catch (e) {}
+      if (!hasStaleData) {
+        document.getElementById('unifiedReqList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>';
+      }
+    });
   }
 
   function setReqFilter(mode) {
