@@ -967,8 +967,10 @@ body > * { flex-shrink:0; }
     setTimeout(function () { splash.style.display = 'none'; }, 550);
   }, 2200);
 
-  // ⚠️ استبدل الرابط ده برابط الديبلويمنت بتاع Apps Script بعد النشر
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjbzVICxW2z6BvOBiakrkuRyBfcbua-2hCYp6aWsrXcwbZi4OYOqmCkay9LEXI96RycQ/exec';
+  // 🔄 بند: الاتصال بـ Supabase Edge Function بدل Google Apps Script
+  // نفس أسماء الإجراءات والمعاملات بالحرف، فكل الكود اللي بينادي apiCall() في باقي
+  // الملف مش محتاج أي تعديل خالص — التغيير محصور في طريقة الاتصال نفسها بس.
+  const SUPABASE_FUNCTION_URL = 'https://cjgcntbchyrubedewxte.supabase.co/functions/v1/time-system-api';
 
   let currentEmployeeId = null;
   let currentStatus = null;
@@ -990,41 +992,28 @@ body > * { flex-shrink:0; }
   }
 
   /**
-   * بند 54: بناء الرابط يدويًا بدل new URL() — بعض إصدارات Safari على iOS بيحصل فيها
-   * خلل متقطع نادر في URL constructor بيرمي "The string did not match the expected pattern"
-   * حتى مع روابط صحيحة 100%. البناء اليدوي بيتفادى المشكلة دي تمامًا لأنه مش بيستخدم
-   * الـAPI اللي فيه الخلل، مع نفس النتيجة بالظبط (رابط + query params مُرمّزة بأمان).
+   * بند 61 (مُعدَّل لـ Supabase): إعادة محاولة تلقائية عند فشل الطلب بخطأ عابر.
+   * دلوقتي بيبعت POST بجسم JSON {action, params} بدل GET بـquery string —
+   * ده الشكل اللي Edge Function بتستقبله.
    */
-  function buildApiUrl_(action, params) {
-    let url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action);
-    Object.keys(params || {}).forEach(k => {
-      if (params[k] !== null && params[k] !== undefined) {
-        url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-      }
-    });
-    return url;
-  }
-
-  /**
-   * بند 61: إعادة محاولة تلقائية عند فشل الطلب بخطأ عابر (زي "Unexpected token" اللي بيحصل
-   * وقت ذروة الاستخدام الصباحي لما موظفين كتير بيسجلوا مع بعض). بدل ما نوري خطأ فورًا،
-   * نحاول تاني 2 مرة بفاصل بسيط — لو المحاولات كلها فشلت، وقتها بس نوري الخطأ للموظف.
-   */
-  function fetchWithRetry_(url, maxRetries) {
+  function fetchWithRetry_(action, params, maxRetries) {
     maxRetries = maxRetries === undefined ? 2 : maxRetries;
-    return fetch(url).then(r => r.json()).catch(err => {
+    return fetch(SUPABASE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, params: params || {} }),
+    }).then(r => r.json()).catch(err => {
       if (maxRetries > 0) {
         return new Promise(resolve => setTimeout(resolve, 900)) // فاصل بسيط قبل إعادة المحاولة
-          .then(() => fetchWithRetry_(url, maxRetries - 1));
+          .then(() => fetchWithRetry_(action, params, maxRetries - 1));
       }
       throw err; // خلصت المحاولات — نرمي الخطأ الحقيقي
     });
   }
 
   function apiCall(action, params) {
-    const url = buildApiUrl_(action, params);
     showLoadingBar();
-    return fetchWithRetry_(url).then(data => {
+    return fetchWithRetry_(action, params).then(data => {
       hideLoadingBar();
       if (data && data.error) throw new Error(data.error);
       return data;
