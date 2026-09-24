@@ -1269,7 +1269,7 @@ body > * { flex-shrink:0; }
 
     let optsHtml = '';
     (res.suggestions || []).forEach(function(s, idx) {
-      optsHtml += '<label class="corr-option"><input type="radio" name="correctionChoice" value="' + s.value + '"' +
+      optsHtml += '<label class="corr-option"><input type="radio" name="correctionChoice" value="' + s.value + '" data-label="' + s.label + '"' +
         (idx === 0 ? ' checked' : '') + '/>' +
         '<span>' + s.label + '</span></label>';
     });
@@ -1310,7 +1310,7 @@ body > * { flex-shrink:0; }
       // عرض نتيجة الانصراف بالتصميم العادي مع علامة "تم التصحيح ذاتيًا"
       const shift = modal.dataset.shift;
       const branch = modal.dataset.branch;
-      const correctedTimeShort = selected.value.substring(11, 16);
+      const correctedTimeShort = selected.dataset.label;
 
       let html = '<div class="result-hero">' +
         '<div class="result-hero-icon">✏️</div>' +
