@@ -1165,6 +1165,7 @@ body > * { flex-shrink:0; }
         }
         showResult(true, html);
         refreshStatus();
+        scheduleAutoLogout();
       })
       .catch(function(err){
         stopLoader();
@@ -1246,6 +1247,7 @@ body > * { flex-shrink:0; }
 
           showResult(true, html);
         refreshStatus();
+        scheduleAutoLogout();
       })
       .catch(function(err){
         stopLoader();
@@ -1364,8 +1366,17 @@ body > * { flex-shrink:0; }
   }
 
   // ---- بند 22: طلب سلفة / إذن (مطابق R1) + السجل الشهري ----
+  /** رجوع تلقائي لشاشة الدخول بعد 35 ثانية من أي عملية ناجحة (حضور/انصراف/سلفة/إذن) —
+   *  يمنع خلط الهوية لو موظف تاني استخدم نفس الجهاز والشاشة لسه واقفة على اسم اللي فات */
+  let autoLogoutTimer = null;
+  function scheduleAutoLogout() {
+    if (autoLogoutTimer) clearTimeout(autoLogoutTimer);
+    autoLogoutTimer = setTimeout(logoutEmployee, 35000);
+  }
+
   /** بند 22.3: رجوع لشاشة تحقق الهوية — يمسح بيانات الموظف الحالي عشان موظف تاني يقدر يستخدم نفس الجهاز */
   function logoutEmployee() {
+    if (autoLogoutTimer) { clearTimeout(autoLogoutTimer); autoLogoutTimer = null; }
     currentEmployeeId = null;
     currentStatus = null;
     stopClock();
@@ -1575,6 +1586,7 @@ body > * { flex-shrink:0; }
         document.getElementById('salAmount').value = '';
         document.getElementById('salReason').value = '';
         document.getElementById('salDate').value = '';
+        scheduleAutoLogout();
       })
       .catch(err => showReqResult(false, err.message));
   }
@@ -1619,6 +1631,7 @@ body > * { flex-shrink:0; }
         document.getElementById('leaveDurDisplay').style.display = 'none';
         document.getElementById('leaveDate').value = '';
         document.getElementById('leaveNote').value = '';
+        scheduleAutoLogout();
       })
       .catch(err => showReqResult(false, err.message));
   }
