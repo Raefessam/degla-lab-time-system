@@ -1237,7 +1237,6 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     <div class="brand-tag">لوحة صاحب العمل</div>
   </div>
     <button id="soundToggle" class="sound-toggle" type="button" onclick="SoundFX.toggle()" title="الصوت">🔔</button>
-    <button id="pushToggle" class="sound-toggle" type="button" onclick="enablePush()" title="تفعيل التنبيهات على الموبايل">📲</button>
 </div>
 
 <!-- بند 18 + 37: شاشة الرئيسية المحسّنة (Home Dashboard v2) -->
@@ -2980,7 +2979,8 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 
 
   // ==========================================================================
-  // تنبيهات Push: بتوصلك حتى والموبايل مقفول (بتتفعّل مرة واحدة من موبايل صاحب العمل)
+  // تنبيهات Push: بتوصلك حتى والموبايل مقفول — بتتفعّل تلقائيًا أول ما الصفحة تفتح،
+  // من غير زرار ومن غير رمز (الرابط نفسه هو حاجز الوصول الوحيد المطلوب هنا)
   // ==========================================================================
   const PUSH_FLAG = 'degla_push_ok';
 
@@ -2996,23 +2996,11 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     return out;
   }
 
-  function refreshPushButton() {
-    const b = document.getElementById('pushToggle');
-    if (!b) return;
-    let on = false;
-    try { on = localStorage.getItem(PUSH_FLAG) === '1' && pushSupported() && Notification.permission === 'granted'; } catch (e) {}
-    b.classList.toggle('on', on);
-    b.title = on ? 'التنبيهات على الموبايل مفعّلة — اضغط لإرسال إشعار تجريبي' : 'تفعيل التنبيهات على الموبايل (حتى والموبايل مقفول)';
-  }
-
-  async function enablePush() {
-    if (!pushSupported()) { alert('المتصفح ده مش بيدعم الإشعارات. افتح الصفحة من Chrome على أندرويد.'); return; }
-    SoundFX.unlock();
+  async function enablePush(silent) {
+    if (!pushSupported()) return;
     try {
       const perm = await Notification.requestPermission();
-      if (perm !== 'granted') { alert('لازم توافق على الإشعارات عشان التنبيهات تشتغل.'); return; }
-      const code = (prompt('اكتب رمز التفعيل (8 أرقام):') || '').trim();
-      if (!code) return;
+      if (perm !== 'granted') return; // رفض أو تجاهل — مفيش أي رسالة مزعجة، هنحاول تاني المرة الجاية
 
       const reg = await navigator.serviceWorker.register('./sw.js');
       await navigator.serviceWorker.ready;
@@ -3023,20 +3011,15 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       let sub = await reg.pushManager.getSubscription();
       if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(keyRes.publicKey) });
 
-      const res = await fetchWithRetry_('pushSubscribe', { code: code, subscription: sub.toJSON(), userAgent: navigator.userAgent }, 1);
+      const res = await fetchWithRetry_('pushSubscribe', { subscription: sub.toJSON(), userAgent: navigator.userAgent }, 1);
       if (!res || res.error) throw new Error((res && res.error) || 'فشل التفعيل');
+
+      const alreadyOn = localStorage.getItem(PUSH_FLAG) === '1';
       try { localStorage.setItem(PUSH_FLAG, '1'); } catch (e) {}
       setPushMode(true);
-      refreshPushButton();
-
-      const t = await fetchWithRetry_('pushTest', { code: code }, 1);
-      SoundFX.play('success');
-      alert(t && t.sent > 0
-        ? 'تم التفعيل ✅ — المفروض إشعار تجريبي يوصلك دلوقتي.'
-        : 'تم حفظ الاشتراك، لكن الإشعار التجريبي ما وصلش. جرّب تضغط الزرار تاني، ولو استمرت اتأكد إن Chrome مسموحله بالإشعارات وإن البطارية "بدون قيود".');
+      if (!alreadyOn && !silent) { SoundFX.play('success'); showActivityToast({ kind: 'more', text: '📲 التنبيهات على الموبايل شغالة دلوقتي' }); }
     } catch (err) {
-      SoundFX.play('error');
-      alert('مقدرناش نفعّل التنبيهات: ' + (err && err.message ? err.message : err));
+      // فشل صامت — الصفحة تفضل شغالة بالفحص الدوري العادي، وهنحاول تفعيل الـPush تاني المرة الجاية
     }
   }
 
@@ -3053,7 +3036,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       navigator.serviceWorker.register('./sw.js').catch(function () {});
       setPushMode(true);
     }
-    refreshPushButton();
+    enablePush(true); // محاولة تفعيل/تجديد تلقائية بصمت — بدون أي زرار أو رمز
   })();
 
 </script>
