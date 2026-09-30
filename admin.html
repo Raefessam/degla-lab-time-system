@@ -1159,6 +1159,42 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 .add-emp-toggle-btn.open .add-emp-toggle-arrow {
     transform:rotate(-90deg);
 }
+
+/* ===== زرار كتم/تشغيل الصوت (جوه الهيدر) ===== */
+.sound-toggle {
+  position:relative; z-index:2; flex:0 0 auto;
+  width:40px; height:40px; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.4); background:rgba(255,255,255,.2);
+  color:#fff; font-size:1.1rem; line-height:1; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.sound-toggle.muted { opacity:.65; }
+.sound-toggle.on { background:rgba(255,255,255,.5); border-color:#fff; }
+.sound-toggle.needs-tap { animation:soundPulse 1.8s ease-in-out infinite; }
+@keyframes soundPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(255,255,255,.6); }
+  50%     { box-shadow:0 0 0 8px rgba(255,255,255,0); }
+}
+
+/* ===== إشعارات عمليات الموظفين (تظهر فوق الشاشة وتختفي لوحدها) ===== */
+#activityToasts {
+  position:fixed; top:calc(8px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%);
+  z-index:9995; display:flex; flex-direction:column; gap:8px;
+  width:min(92vw, 420px); pointer-events:none;
+}
+.activity-toast {
+  pointer-events:auto; direction:rtl; text-align:right;
+  background:#1f3d0c; color:#fff; border-radius:14px; padding:11px 14px;
+  font-size:.85rem; font-weight:700; line-height:1.5;
+  box-shadow:0 6px 18px rgba(0,0,0,.28);
+  animation:actToastIn .25s ease-out;
+}
+.activity-toast.checkin  { background:#2e7d12; }
+.activity-toast.checkout { background:#37474f; }
+.activity-toast.advance, .activity-toast.absence { background:#b26a00; }
+.activity-toast.more     { background:#555; text-align:center; }
+@keyframes actToastIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }
 </style>
 </head>
 <body>
@@ -1200,6 +1236,8 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     <div class="brand-name">DEGLA SMART LAB</div>
     <div class="brand-tag">لوحة صاحب العمل</div>
   </div>
+    <button id="soundToggle" class="sound-toggle" type="button" onclick="SoundFX.toggle()" title="الصوت">🔔</button>
+    <button id="pushToggle" class="sound-toggle" type="button" onclick="enablePush()" title="تفعيل التنبيهات على الموبايل">📲</button>
 </div>
 
 <!-- بند 18 + 37: شاشة الرئيسية المحسّنة (Home Dashboard v2) -->
@@ -1354,21 +1392,14 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     </div>
     <button class="btn bng bfull" onclick="submitUpdateInfo()">حفظ البيانات</button>
 
-    <div class="fg" style="margin-top:12px;"><label>نافذة الحضور — من (بند 8.2)</label><input type="text" id="windowStart" placeholder="18:00"></div>
-    <div class="fg-hint">إلزامي بنظام 24 ساعة — اكتب "18:00" مش "6"</div>
-    <div class="fg"><label>نافذة الحضور — إلى</label><input type="text" id="windowEnd" placeholder="23:00"></div>
-    <div class="fg-hint">إلزامي بنظام 24 ساعة</div>
-
-    <button class="btn bng bfull" onclick="submitCustomWindow()">حفظ النافذة الزمنية</button>
-
-    <div class="toggle-row" style="margin-top:10px;">
-      <span style="font-size:.82rem;">تفعيل النافذة المخصصة (بند 33.1)</span>
+    <div class="toggle-row" style="margin-top:14px;">
+      <span style="font-size:.82rem;">استثناء من خصم التأخير</span>
       <label class="switch">
-        <input type="checkbox" id="windowEnabledToggle" onchange="submitWindowEnabledToggle()">
+        <input type="checkbox" id="deductionSuspendedToggle" onchange="submitDeductionSuspendedToggle()">
         <span class="slider"></span>
       </label>
     </div>
-    <div class="fg-hint">إيقافه بيرجّع الموظف لمواعيد الشيفت العادية، من غير ما يمسح الأوقات المحفوظة</div>
+    <div class="fg-hint">لما يبقى مفعّل، الموظف مش هيتحاسب على أي تأخير — الساعات الفعلية بتتحسب في مرتبه زي العادة</div>
 
     <div class="msg" id="editEmpMsg"></div>
 
@@ -1446,6 +1477,99 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 <div class="footer">Infinite Systems — دجله لاب</div>
 
 <script>
+  // ==========================================================================
+  // نظام الأصوات: نغمات مولّدة بالكود (Web Audio) — من غير ملفات صوت ومن غير حاجة للإنترنت
+  //   success = نجاح عملية | error = فشل عملية | alert = عملية موظف جديدة | request = طلب/مراجعة محتاجة انتباه
+  // ==========================================================================
+  const SoundFX = (function () {
+    let ctx = null;
+    let muted = false;
+    try { muted = localStorage.getItem('degla_sound_muted') === '1'; } catch (e) { /* التخزين ممكن يكون معطّل */ }
+
+    function getCtx() {
+      if (ctx) return ctx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try {
+        ctx = new AC();
+        ctx.onstatechange = refreshButton;
+      } catch (e) { ctx = null; }
+      return ctx;
+    }
+
+    /** المتصفحات (خصوصًا الآيفون) مبتسمحش بالصوت إلا بعد لمسة من المستخدم — بنفتحه مع أول لمسة في أي مكان */
+    function unlock() {
+      const c = getCtx();
+      if (!c) return;
+      if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+      try {
+        const buf = c.createBuffer(1, 1, 22050);
+        const src = c.createBufferSource();
+        src.buffer = buf; src.connect(c.destination); src.start(0);
+      } catch (e) {}
+      refreshButton();
+    }
+    ['touchend', 'pointerdown', 'click', 'keydown'].forEach(function (ev) {
+      document.addEventListener(ev, unlock, { passive: true });
+    });
+
+    function tone(c, freq, start, dur, type, vol) {
+      const t0 = c.currentTime + start;
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol || 0.28, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.05);
+    }
+
+    // [التردد، بداية النغمة بالثواني، مدتها، نوع الموجة، الشدة]
+    const PATTERNS = {
+      success: [[659.25, 0, 0.16], [987.77, 0.13, 0.28]],
+      error:   [[233.08, 0, 0.2, 'square', 0.13], [174.61, 0.18, 0.32, 'square', 0.13]],
+      alert:   [[523.25, 0, 0.14], [659.25, 0.13, 0.14], [783.99, 0.26, 0.3]],
+      request: [[880, 0, 0.14], [880, 0.22, 0.14], [1174.66, 0.44, 0.34]]
+    };
+
+    function play(name) {
+      try {
+        if (muted) return;
+        const pattern = PATTERNS[name];
+        const c = getCtx();
+        if (!pattern || !c) return;
+        const run = function () { pattern.forEach(function (n) { tone(c, n[0], n[1], n[2], n[3], n[4]); }); };
+        if (c.state === 'suspended') { c.resume().then(run).catch(function () {}); }
+        else { run(); }
+      } catch (e) { /* الصوت مينفعش يعطّل أي عملية أساسية أبدًا */ }
+    }
+
+    function refreshButton() {
+      const b = document.getElementById('soundToggle');
+      if (!b) return;
+      const locked = !muted && !(ctx && ctx.state === 'running');
+      b.textContent = muted ? '🔕' : '🔔';
+      b.classList.toggle('muted', muted);
+      b.classList.toggle('needs-tap', locked);
+      const tip = muted ? 'الصوت مكتوم — اضغط للتشغيل' : (locked ? 'اضغط في أي مكان لتفعيل الصوت' : 'الصوت شغال — اضغط للكتم');
+      b.title = tip;
+      b.setAttribute('aria-label', tip);
+    }
+
+    function toggle() {
+      unlock();
+      muted = !muted;
+      try { localStorage.setItem('degla_sound_muted', muted ? '1' : '0'); } catch (e) {}
+      refreshButton();
+      if (!muted) play('success');
+    }
+
+    document.addEventListener('DOMContentLoaded', refreshButton);
+    return { play: play, toggle: toggle, unlock: unlock, isMuted: function () { return muted; } };
+  })();
+
   // بند 30.1: إخفاء شاشة التحميل تلقائيًا بعد 2.2 ثانية بتأثير تلاشي سلس
   setTimeout(function () {
     const splash = document.getElementById('splash');
@@ -1492,14 +1616,24 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     });
   }
 
+  // العمليات اللي بتغيّر بيانات (بنعمل ليها صوت نجاح/خطأ) — القراءة والتحميل بيشتغلوا من غير صوت
+  const SOUND_WRITE_ACTIONS = {
+    manualCheckout: 1, reopenAnomalyRecord: 1, adminCorrectAttendance: 1, addEmployee: 1, updateEmployeeInfo: 1,
+    toggleEmployeeStatus: 1, deleteEmployeePermanently: 1, setDeductionSuspended: 1, cancelDeductionForShift: 1,
+    reenableDeductionForShift: 1, decideAbsence: 1, decideAdvance: 1, approveAbsence: 1, rejectAbsence: 1,
+    approveAdvance: 1, rejectAdvance: 1, markUnauthorizedAbsence: 1, closeMonth: 1
+  };
+
   function apiCall(action, params) {
     showLoadingBar();
     return fetchWithRetry_(action, params).then(data => {
       hideLoadingBar();
       if (data && data.error) throw new Error(data.error);
+      if (SOUND_WRITE_ACTIONS[action]) SoundFX.play('success');
       return data;
     }).catch(err => {
       hideLoadingBar();
+      if (SOUND_WRITE_ACTIONS[action]) SoundFX.play('error');
       throw err;
     });
   }
@@ -2205,10 +2339,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     const statusPill = isActive
       ? '<button class="status-pill" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'غير نشط\')">🟢 نشط</button>'
       : '<button class="status-pill inactive" onclick="toggleStatus(\'' + e.EmployeeID + '\',\'نشط\')">⚪ غير نشط</button>';
-    const windowEnabled = (e.CustomWindowEnabled === true || e.CustomWindowEnabled === 'TRUE');
-    const windowInfo = (e.CustomWindowStart && e.CustomWindowEnd)
-      ? e.CustomWindowStart + ' - ' + e.CustomWindowEnd + (windowEnabled ? ' ✅' : ' (متوقفة⏸️)')
-      : '—';
+    const suspended = (e.DeductionSuspended === true || e.DeductionSuspended === 'TRUE');
 
     let h = '<div class="emp-card"' + (isActive ? '' : ' style="opacity:.8; border-style:dashed;"') + '><div class="ec-head">';
     h += '<div style="display:flex; flex-direction:column; align-items:center; gap:6px;">' + statusPill +
@@ -2218,7 +2349,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     h += '<div><div class="ec-stat-lbl">المرتب اليومي</div><div class="ec-stat-val">' + Number(e.DailySalary).toLocaleString() + ' ج.م</div></div>';
     h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.Phone || '—') + '</div></div>';
     h += '<div><div class="ec-stat-lbl">رقم البطاقة</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.NationalId || '—') + '</div></div>';
-    h += '<div><div class="ec-stat-lbl">نافذة مخصصة (بند 8.2)</div><div class="ec-stat-val">' + windowInfo + '</div></div>';
+    h += '<div><div class="ec-stat-lbl">استثناء من الخصم</div><div class="ec-stat-val">' + (suspended ? '✅ مفعّل' : '⏸️ موقوف') + '</div></div>';
     h += '</div><div class="ec-actions">';
     h += '<button class="ec-edit" onclick="openEditEmployee(\'' + e.EmployeeID + '\')">✏️ تعديل</button>';
     h += '</div></div>';
@@ -2306,9 +2437,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     document.getElementById('editNationalId').value = emp.NationalId || '';
     document.getElementById('editPhone').value = emp.Phone || '';
     document.getElementById('editHireDate').value = emp.HireDate || '';
-    document.getElementById('windowStart').value = emp.CustomWindowStart || '';
-    document.getElementById('windowEnd').value = emp.CustomWindowEnd || '';
-    document.getElementById('windowEnabledToggle').checked = (emp.CustomWindowEnabled === true || emp.CustomWindowEnabled === 'TRUE');
+    document.getElementById('deductionSuspendedToggle').checked = (emp.DeductionSuspended === true || emp.DeductionSuspended === 'TRUE');
 
     // بند 8.0: زرار الحذف النهائي يظهر فقط للموظف "غير نشط"
     const isInactive = (emp.Status === 'غير نشط');
@@ -2338,23 +2467,11 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     askPin(id, 'delete');
   }
 
-  function submitCustomWindow() {
-    const start = document.getElementById('windowStart').value;
-    const end = document.getElementById('windowEnd').value;
-    apiCall('setCustomWindow', { employeeId: document.getElementById('editEmpId').value, start, end })
-      .then(() => {
-        showMsg('editEmpMsg', true, 'تم حفظ النافذة الزمنية المخصصة');
-        document.getElementById('windowEnabledToggle').checked = !!(start && end); // بند 33.1: تفعيل تلقائي عند الحفظ
-        loadEmployeeList();
-      })
-      .catch(err => showMsg('editEmpMsg', false, err.message));
-  }
-
-  /** بند 33.1: تفعيل/إيقاف النافذة المخصصة بدون مسح الأوقات المحفوظة */
-  function submitWindowEnabledToggle() {
-    const enabled = document.getElementById('windowEnabledToggle').checked;
-    apiCall('setCustomWindowEnabled', { employeeId: document.getElementById('editEmpId').value, enabled })
-      .then(() => { showMsg('editEmpMsg', true, enabled ? 'تم تفعيل النافذة المخصصة' : 'تم إيقاف النافذة المخصصة (الأوقات لسه محفوظة)'); loadEmployeeList(); })
+  /** استثناء موظف من خصم التأخير — لما يبقى مفعّل، أي تأخير ليه ما يترتبش عليه دين ساعات */
+  function submitDeductionSuspendedToggle() {
+    const enabled = document.getElementById('deductionSuspendedToggle').checked;
+    apiCall('setDeductionSuspended', { employeeId: document.getElementById('editEmpId').value, enabled })
+      .then(() => { showMsg('editEmpMsg', true, enabled ? 'الموظف بقى مستثنى من خصم التأخير' : 'الموظف رجع يتحاسب على التأخير زي العادة'); loadEmployeeList(); })
       .catch(err => showMsg('editEmpMsg', false, err.message));
   }
 
@@ -2778,6 +2895,167 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   }
 
   loadDashboard();
+
+  // ==========================================================================
+  // تنبيهات عمليات الموظفين اللحظية: فحص خفيف كل 30 ثانية (وقت ما الصفحة ظاهرة بس)
+  // أول فحص بيحدد نقطة البداية من غير صوت، وبعدها أي عملية جديدة = نغمة + إشعار فوق الشاشة
+  // ==========================================================================
+  let ACTIVITY_POLL_MS = 120000;
+  const ACTIVITY_STALE_GAP_MS = 30 * 60 * 1000; // لو الصفحة كانت مقفولة أكتر من نص ساعة، نبدأ من جديد من غير ضوضاء
+  let activitySince = null;
+  let activityLastOkAt = 0;
+  let activityBusy = false;
+
+  function activityText(e) {
+    const who = e.name || e.employeeId || '';
+    const where = (e.branch || '') + (e.shift ? ' / ' + e.shift : '');
+    if (e.kind === 'checkin') {
+      return '🟢 حضور — ' + who + ' — ' + where + ' — ' + e.time + (e.lateMinutes > 0 ? ' (تأخير ' + e.lateMinutes + ' د)' : '');
+    }
+    if (e.kind === 'checkout') {
+      return '🚪 انصراف — ' + who + ' — ' + where + ' — ' + e.time + (e.detail ? ' ⚠️ ' + e.detail : '');
+    }
+    if (e.kind === 'advance') {
+      return '💰 طلب سلفة — ' + who + ' — ' + e.amount + ' ج.م';
+    }
+    if (e.kind === 'absence') {
+      return '📅 طلب إذن — ' + who + ' — ' + (e.date || '') + (e.detail ? ' — ' + e.detail : '');
+    }
+    return e.text || '';
+  }
+
+  function showActivityToast(e) {
+    let box = document.getElementById('activityToasts');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'activityToasts';
+      document.body.appendChild(box);
+    }
+    const t = document.createElement('div');
+    t.className = 'activity-toast ' + (e.kind || '');
+    t.textContent = activityText(e); // textContent عشان أي اسم/ملاحظة تتعرض كنص عادي بس
+    t.onclick = function () { t.remove(); };
+    box.appendChild(t);
+    while (box.children.length > 5) box.removeChild(box.firstChild);
+    setTimeout(function () { if (t.parentNode) t.remove(); }, 7000);
+  }
+
+  function handleActivityEvents(events) {
+    const needsAttention = events.some(function (e) { return e.attention; });
+    SoundFX.play(needsAttention ? 'request' : 'alert');
+    events.slice(-3).forEach(showActivityToast);
+    if (events.length > 3) showActivityToast({ kind: 'more', text: '+' + (events.length - 3) + ' عمليات أخرى' });
+    // لو الرئيسية مفتوحة، نحدّث الأرقام فورًا
+    const home = document.getElementById('panel-home');
+    if (home && home.classList.contains('active') && typeof loadDashboard === 'function') loadDashboard();
+  }
+
+  function pollActivity(isRetry) {
+    if (activityBusy || document.hidden) return;
+    activityBusy = true;
+    const gapTooBig = activityLastOkAt && (Date.now() - activityLastOkAt) > ACTIVITY_STALE_GAP_MS;
+    const params = (activitySince && !gapTooBig) ? { since: activitySince } : {};
+    fetchWithRetry_('latestActivity', params, 0)
+      .then(function (data) {
+        if (!data || data.error || !data.serverNow) throw new Error('activity');
+        activitySince = data.serverNow;
+        activityLastOkAt = Date.now();
+        if (data.events && data.events.length) handleActivityEvents(data.events);
+      })
+      .catch(function () {
+        // خطأ لحظي: الختم الزمني ما اتحرّكش فمفيش عملية بتضيع — نعيد المحاولة مرة واحدة بعد ثواني
+        if (!isRetry) setTimeout(function () { pollActivity(true); }, 8000);
+      })
+      .then(function () { activityBusy = false; });
+  }
+
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) pollActivity(); });
+  pollActivity();
+  let activityTimer = setInterval(pollActivity, ACTIVITY_POLL_MS);
+  function setPushMode(on) {
+    ACTIVITY_POLL_MS = on ? 300000 : 120000;
+    clearInterval(activityTimer);
+    activityTimer = setInterval(pollActivity, ACTIVITY_POLL_MS);
+  }
+
+
+  // ==========================================================================
+  // تنبيهات Push: بتوصلك حتى والموبايل مقفول (بتتفعّل مرة واحدة من موبايل صاحب العمل)
+  // ==========================================================================
+  const PUSH_FLAG = 'degla_push_ok';
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  }
+
+  function urlB64ToUint8Array(b64) {
+    const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function refreshPushButton() {
+    const b = document.getElementById('pushToggle');
+    if (!b) return;
+    let on = false;
+    try { on = localStorage.getItem(PUSH_FLAG) === '1' && pushSupported() && Notification.permission === 'granted'; } catch (e) {}
+    b.classList.toggle('on', on);
+    b.title = on ? 'التنبيهات على الموبايل مفعّلة — اضغط لإرسال إشعار تجريبي' : 'تفعيل التنبيهات على الموبايل (حتى والموبايل مقفول)';
+  }
+
+  async function enablePush() {
+    if (!pushSupported()) { alert('المتصفح ده مش بيدعم الإشعارات. افتح الصفحة من Chrome على أندرويد.'); return; }
+    SoundFX.unlock();
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { alert('لازم توافق على الإشعارات عشان التنبيهات تشتغل.'); return; }
+      const code = (prompt('اكتب رمز التفعيل (8 أرقام):') || '').trim();
+      if (!code) return;
+
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      await navigator.serviceWorker.ready;
+
+      const keyRes = await fetchWithRetry_('pushPublicKey', {}, 1);
+      if (!keyRes || keyRes.error || !keyRes.publicKey) throw new Error((keyRes && keyRes.error) || 'تعذّر جلب مفتاح الإشعارات');
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(keyRes.publicKey) });
+
+      const res = await fetchWithRetry_('pushSubscribe', { code: code, subscription: sub.toJSON(), userAgent: navigator.userAgent }, 1);
+      if (!res || res.error) throw new Error((res && res.error) || 'فشل التفعيل');
+      try { localStorage.setItem(PUSH_FLAG, '1'); } catch (e) {}
+      setPushMode(true);
+      refreshPushButton();
+
+      const t = await fetchWithRetry_('pushTest', { code: code }, 1);
+      SoundFX.play('success');
+      alert(t && t.sent > 0
+        ? 'تم التفعيل ✅ — المفروض إشعار تجريبي يوصلك دلوقتي.'
+        : 'تم حفظ الاشتراك، لكن الإشعار التجريبي ما وصلش. جرّب تضغط الزرار تاني، ولو استمرت اتأكد إن Chrome مسموحله بالإشعارات وإن البطارية "بدون قيود".');
+    } catch (err) {
+      SoundFX.play('error');
+      alert('مقدرناش نفعّل التنبيهات: ' + (err && err.message ? err.message : err));
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    // السيرفر بعتلنا "دقّة" → نسأل عن التفاصيل فورًا (بنفس مسار الفحص العادي، فمفيش تكرار)
+    navigator.serviceWorker.addEventListener('message', function (ev) {
+      if (ev.data && ev.data.type === 'degla-push') pollActivity();
+    });
+  }
+  (function initPush() {
+    let on = false;
+    try { on = localStorage.getItem(PUSH_FLAG) === '1' && pushSupported() && Notification.permission === 'granted'; } catch (e) {}
+    if (on) {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+      setPushMode(true);
+    }
+    refreshPushButton();
+  })();
+
 </script>
 
 <!-- بند 37: شريط التنقل السفلي (Bottom Navigation) — أسهل للأصابع على الموبيل -->
