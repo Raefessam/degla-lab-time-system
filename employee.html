@@ -1728,12 +1728,14 @@ body > * { flex-shrink:0; }
   function submitAbsenceRequestEmp() {
     if (!currentEmployeeId) return alert('سجّل دخولك الأول');
     const date = document.getElementById('leaveDate').value;
+    const reason = document.getElementById('leaveReason').value.trim();
     const duration = calcLeaveDuration();
-    const note = document.getElementById('leaveNote').value;
+    const notes = document.getElementById('leaveNote').value;
     if (!date) return showReqResult(false, 'من فضلك اختار التاريخ');
+    if (!reason) return showReqResult(false, 'من فضلك اكتب سبب الإذن');
     if (!duration) return showReqResult(false, 'من فضلك حدد وقت البداية والنهاية بشكل صحيح');
 
-    apiCall('requestAbsence', { employeeId: currentEmployeeId, date, duration, note })
+    apiCall('requestAbsence', { employeeId: currentEmployeeId, date, reason, duration, notes })
       .then(res => {
         showReqResult(true, 'تم إرسال طلب الإذن (' + duration + ') ليوم ' + date + ' — بانتظار موافقة صاحب العمل.');
         document.getElementById('leaveReason').value = '';
