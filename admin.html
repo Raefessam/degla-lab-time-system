@@ -44,7 +44,10 @@
     --radius-xl: 22px;
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-html,body { height:100%; font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
+/* body بـ min-height بدل height ثابت — عشان padding الشريط السفلي يزوّد مساحة السكرول فعلًا وآخر عنصر في أي صفحة ما يستخباش تحت الشريط */
+html { height:100%; }
+body { min-height:100%; }
+html,body { font-family:"Cairo",sans-serif; background:var(--bg); color:var(--t); }
 body {
     padding:max(env(safe-area-inset-top, 0px), 20px) 14px 40px; max-width:900px; margin:0 auto;
     /* بند 57 (تصحيح بند 55): شلنا transform من هنا لأنها كانت بتكسر position:fixed
@@ -422,6 +425,25 @@ input:checked + .slider:before { transform:translateX(-20px); }
 .alert-v2.absence { border-right-color:var(--info); color:var(--info-d); background:var(--info-l); }
 .alert-icon-v2 { font-size:1.15rem; flex-shrink:0; }
 .alert-msg-v2 { flex:1; line-height:1.5; }
+
+/* تنبيهات الديون مجمّعة في سطر واحد بيتفتح ويتقفل */
+.alerts-v2.after-report { margin-top:16px; }
+details.alert-group { display:block; padding:0; }
+details.alert-group > summary {
+  list-style:none; cursor:pointer; padding:12px 14px;
+  display:flex; align-items:center; gap:12px;
+}
+details.alert-group > summary::-webkit-details-marker { display:none; }
+.alert-group-arrow { font-size:.75rem; transition:transform .2s; }
+details.alert-group[open] .alert-group-arrow { transform:rotate(180deg); }
+.alert-group-list { padding:0 14px 10px; display:flex; flex-direction:column; gap:6px; }
+.alert-group-row {
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:rgba(255,255,255,.65); border-radius:9px; padding:8px 10px;
+  font-size:.76rem;
+}
+.alert-group-row b { font-weight:900; white-space:nowrap; }
+.alert-group-name small { opacity:.7; font-weight:700; }
 
 /* ---------- بند 45: قسم التقرير اليومي حسب الفرع ---------- */
 .section-title {
@@ -1278,9 +1300,6 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     </div>
   </div>
 
-  <!-- التنبيهات الذكية -->
-  <div id="alertBar"></div>
-
   <!-- بند 45: التقرير اليومي حسب الفرع — يعرض كل حضور اليوم لكل فرع -->
   <div class="section-title">
     <div class="section-title-txt">
@@ -1295,6 +1314,9 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   </div>
 
   <div id="dailyBranchReport"><div class="empty-v2"><div class="empty-icon">⏳</div><div class="empty-txt">جاري التحميل...</div></div></div>
+
+  <!-- التنبيهات الذكية — تحت التقرير اليومي، والديون مجمّعة في سطر واحد -->
+  <div id="alertBar"></div>
 </div>
 
 <!-- بند 10 و7.3: يحتاج مراجعة -->
@@ -1911,8 +1933,17 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       alertBar.innerHTML = '';
     } else {
       const iconMap = { debt: '⏱', 'month-end': '📅', absence: '📋' };
-      let html = '<div class="alerts-v2">';
-      data.alerts.forEach(a => {
+      // نحافظ على حالة سطر الديون (مفتوح/مقفول) لما الشاشة تتحدث في الخلفية
+      const prevGroup = alertBar.querySelector('details.alert-group');
+      const wasOpen = !!(prevGroup && prevGroup.open);
+
+      const debtAlerts = data.alerts.filter(a => a.type === 'debt');
+      const otherAlerts = data.alerts.filter(a => a.type !== 'debt');
+
+      let html = '<div class="alerts-v2 after-report">';
+
+      // التنبيهات اللي محتاجة قرار (إذن، آخر الشهر...) — كل واحد في سطر لوحده
+      otherAlerts.forEach(a => {
         const icon = iconMap[a.type] || '💡';
         // بند 38: تحويل أي "X.YY ساعة" في النص لصيغة X:MM
         const formattedMsg = String(a.message).replace(/(\d+\.\d+)\s*ساعة/g, (m, num) => formatHoursAsTime(parseFloat(num), true));
@@ -1921,6 +1952,32 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
           '<div class="alert-msg-v2">' + formattedMsg + '</div>' +
         '</div>';
       });
+
+      // تنبيهات الديون — سطر واحد بيتفتح لقايمة مترتبة من الأكبر للأصغر
+      if (debtAlerts.length > 0) {
+        const rows = debtAlerts.map(a => {
+          const m = String(a.message).match(/الموظف\s+(.+?)\s*\(([^)]+)\)\s*عنده دين متراكم\s*=\s*([\d.]+)/);
+          return m
+            ? { name: m[1].trim(), id: m[2], hours: parseFloat(m[3]), raw: null }
+            : { name: '', id: '', hours: -1, raw: String(a.message) };
+        }).sort((x, y) => y.hours - x.hours);
+
+        html += '<details class="alert-v2 debt alert-group"' + (wasOpen ? ' open' : '') + '>' +
+          '<summary>' +
+            '<div class="alert-icon-v2">⏱</div>' +
+            '<div class="alert-msg-v2">' + debtAlerts.length + ' ' + (debtAlerts.length === 1 ? 'موظف عليه' : 'موظفين عليهم') + ' دين متراكم — يستأهل متابعة</div>' +
+            '<span class="alert-group-arrow">▼</span>' +
+          '</summary>' +
+          '<div class="alert-group-list">';
+        rows.forEach(r => {
+          html += r.raw !== null
+            ? '<div class="alert-group-row">' + r.raw + '</div>'
+            : '<div class="alert-group-row"><span class="alert-group-name">' + r.name + ' <small>(' + r.id + ')</small></span>' +
+              '<b>' + formatHoursAsTime(r.hours, true) + '</b></div>';
+        });
+        html += '</div></details>';
+      }
+
       html += '</div>';
       alertBar.innerHTML = html;
     }
