@@ -941,6 +941,7 @@ body > * { flex-shrink:0; }
       <button onclick="closeMyRequests()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--m);">✕</button>
     </div>
 
+    <select id="myReqMonth" onchange="loadMyRequests()" style="width:100%; padding:10px 12px; margin-bottom:10px; border:1.5px solid var(--gd); border-radius:11px; background:var(--gl); font-family:inherit; font-size:.85rem; font-weight:800; color:var(--gd); outline:none;"></select>
     <div id="myRequestsContainer" style="max-height:420px; overflow-y:auto;"><div class="no-data">جاري التحميل...</div></div>
 
     <button class="btn bng bfull" style="margin-top:12px;" onclick="closeMyRequests()">إغلاق</button>
@@ -1352,7 +1353,7 @@ body > * { flex-shrink:0; }
             html += buildResultRow('📌', 'ساعات خارج حدود الأوفر تايم', formatHoursAsTime(res.hoursBeyondOvertimeCap, true), 'warn');
           }
           const debtColor = res.currentBalance > 0 ? 'neg' : 'pos';
-          html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'رصيد الدين الحالي', formatHoursAsTime(res.currentBalance, true), debtColor);
+          html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'دين الشهر ده', formatHoursAsTime(res.currentBalance, true), debtColor);
           html += '</div>';
 
           showResult(true, html);
@@ -1443,7 +1444,7 @@ body > * { flex-shrink:0; }
         html += buildResultRow('📌', 'ساعات خارج حدود الأوفر تايم', formatHoursAsTime(res.hoursBeyondOvertimeCap, true), 'warn');
       }
       const debtColor = res.currentBalance > 0 ? 'neg' : 'pos';
-      html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'رصيد الدين الحالي', formatHoursAsTime(res.currentBalance, true), debtColor);
+      html += buildResultRow(res.currentBalance > 0 ? '⏱' : '✅', 'دين الشهر ده', formatHoursAsTime(res.currentBalance, true), debtColor);
       html += '</div>';
 
       showResult(true, html);
@@ -1775,10 +1776,31 @@ body > * { flex-shrink:0; }
   function openMyRequests() {
     if (!currentEmployeeId) return alert('سجّل دخولك الأول');
     document.getElementById('myRequestsModal').style.display = 'block';
-    document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">جاري التحميل...</div>';
+    fillMyReqMonths().then(loadMyRequests);
+  }
 
-    apiCall('myRequests', { employeeId: currentEmployeeId })
-      .then(renderMyRequests)
+  // الفصل الشهري: "طلباتي" بتعرض شهر واحد (الافتراضي الشهر الحالي) ومعاها اختيار لأي شهر قديم
+  const AR_MONTHS_UI = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  function currentMonthCairoUI() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' }).substring(0, 7); }
+  function monthLabelUI(ym) { const p = String(ym).split('-'); return AR_MONTHS_UI[Number(p[1]) - 1] + ' ' + p[0]; }
+  let __myMonthsLoaded = false;
+  function fillMyReqMonths() {
+    const sel = document.getElementById('myReqMonth');
+    if (__myMonthsLoaded) return Promise.resolve();
+    const cur = currentMonthCairoUI();
+    sel.innerHTML = '<option value="' + cur + '">📅 ' + monthLabelUI(cur) + ' — الشهر الحالي</option>';
+    return fetchWithRetry_('monthsList', {}).then(d => {
+      if (!d || d.error || !d.months) return;
+      sel.innerHTML = d.months.map(m => '<option value="' + m.month + '"' + (m.current ? ' selected' : '') + '>' +
+        (m.current ? '📅 ' : '🗂️ ') + m.label + (m.current ? ' — الشهر الحالي' : '') + '</option>').join('');
+      __myMonthsLoaded = true;
+    }).catch(() => {});
+  }
+  function loadMyRequests() {
+    const month = document.getElementById('myReqMonth').value || currentMonthCairoUI();
+    document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">جاري التحميل...</div>';
+    apiCall('myRequests', { employeeId: currentEmployeeId, month })
+      .then(reqs => { if (month === (document.getElementById('myReqMonth').value || currentMonthCairoUI())) renderMyRequests(reqs); })
       .catch(err => document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">خطأ: ' + err.message + '</div>');
   }
 
@@ -1788,7 +1810,7 @@ body > * { flex-shrink:0; }
 
   function renderMyRequests(requests) {
     if (!requests || requests.length === 0) {
-      document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">📭 مفيش أي طلبات سابقة</div>';
+      document.getElementById('myRequestsContainer').innerHTML = '<div class="no-data">📭 مفيش طلبات في الشهر ده</div>';
       return;
     }
 

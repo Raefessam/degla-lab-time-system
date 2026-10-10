@@ -848,6 +848,18 @@ details.alert-group[open] .alert-group-arrow { transform:rotate(180deg); }
 }
 .att-search-input:focus { border-color:var(--g); }
 
+/* اختيار الشهر — كل شهر بسجلاته لوحده */
+.month-select {
+  width:100%; padding:11px 14px; margin-bottom:8px;
+  border:1.5px solid var(--gd); border-radius:12px; background:var(--gl);
+  font-family:"Cairo",sans-serif; font-size:.85rem; font-weight:800; color:var(--gd);
+  outline:none; cursor:pointer;
+}
+.month-closed-note {
+  background:#f5f5f5; border:1.5px dashed var(--b4); color:var(--m); border-radius:12px;
+  padding:9px 12px; font-size:.75rem; font-weight:800; margin-bottom:10px; text-align:center;
+}
+.alert-v2.unclosed { border-right-color:var(--r); color:var(--r); background:#fdecea; }
 .att-date-picker {
   width:100%; padding:11px 14px;
   border:1.5px solid var(--b3); border-radius:12px;
@@ -1291,7 +1303,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     <div class="stat-card-v2 warn">
       <div class="stat-icon">⏱</div>
       <div class="stat-num-v2" id="dashDebt">-</div>
-      <div class="stat-lbl-v2">إجمالي الدين</div>
+      <div class="stat-lbl-v2">إجمالي دين الشهر</div>
     </div>
     <div class="stat-card-v2 danger">
       <div class="stat-icon">⚠</div>
@@ -1323,6 +1335,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 <div class="panel" id="panel-review">
   <div class="card">
     <div class="stitle">الأيام المفتوحة / التي تحتاج مراجعة</div>
+    <select id="reviewMonth" class="month-select" onchange="onMonthChange('review', this.value)"></select>
     <div id="reviewList"><div class="empty">جاري التحميل...</div></div>
     <button class="btn bng bfull" style="margin-top:10px;" onclick="loadReviewList()">تحديث القائمة 🔄</button>
   </div>
@@ -1346,6 +1359,9 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       <div class="att-filter-title-txt">سجل الحضور</div>
       <button class="att-filter-title-btn" onclick="loadAttendanceLog()">🔄 تحديث</button>
     </div>
+
+    <select id="attMonth" class="month-select" onchange="onMonthChange('attendance', this.value)"></select>
+    <div id="attMonthNote"></div>
 
     <div class="att-mode-toggle">
       <button class="att-mode-btn" id="attFilterAll" onclick="setAttFilter('all')">📆 الكل</button>
@@ -1433,6 +1449,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 <div class="panel" id="panel-absence">
   <div class="card">
     <div class="stitle">طلبات الموظفين <button class="mini-btn" onclick="loadUnifiedRequests()">تحديث</button></div>
+    <select id="reqMonth" class="month-select" onchange="onMonthChange('requests', this.value)"></select>
     <div style="display:flex; gap:8px; margin-bottom:10px;">
       <button class="btn bng" id="reqFilterAll" style="flex:1;" onclick="setReqFilter('all')">الكل</button>
       <button class="btn bno" id="reqFilterAbsence" style="flex:1;" onclick="setReqFilter('إذن')">إذن</button>
@@ -1932,7 +1949,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
     if (!data.alerts || data.alerts.length === 0) {
       alertBar.innerHTML = '';
     } else {
-      const iconMap = { debt: '⏱', 'month-end': '📅', absence: '📋' };
+      const iconMap = { debt: '⏱', 'month-end': '📅', absence: '📋', unclosed: '🔒' };
       // نحافظ على حالة سطر الديون (مفتوح/مقفول) لما الشاشة تتحدث في الخلفية
       const prevGroup = alertBar.querySelector('details.alert-group');
       const wasOpen = !!(prevGroup && prevGroup.open);
@@ -1956,7 +1973,8 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
       // تنبيهات الديون — سطر واحد بيتفتح لقايمة مترتبة من الأكبر للأصغر
       if (debtAlerts.length > 0) {
         const rows = debtAlerts.map(a => {
-          const m = String(a.message).match(/الموظف\s+(.+?)\s*\(([^)]+)\)\s*عنده دين متراكم\s*=\s*([\d.]+)/);
+          if (a.name && a.employeeId && typeof a.hours === 'number') return { name: a.name, id: a.employeeId, hours: a.hours, raw: null };
+          const m = String(a.message).match(/الموظف\s+(.+?)\s*\(([^)]+)\)\s*عنده دين(?: متراكم| الشهر ده)?\s*=\s*([\d.]+)/);
           return m
             ? { name: m[1].trim(), id: m[2], hours: parseFloat(m[3]), raw: null }
             : { name: '', id: '', hours: -1, raw: String(a.message) };
@@ -1965,7 +1983,7 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
         html += '<details class="alert-v2 debt alert-group"' + (wasOpen ? ' open' : '') + '>' +
           '<summary>' +
             '<div class="alert-icon-v2">⏱</div>' +
-            '<div class="alert-msg-v2">' + debtAlerts.length + ' ' + (debtAlerts.length === 1 ? 'موظف عليه' : 'موظفين عليهم') + ' دين متراكم — يستأهل متابعة</div>' +
+            '<div class="alert-msg-v2">' + debtAlerts.length + ' ' + (debtAlerts.length === 1 ? 'موظف عليه' : 'موظفين عليهم') + ' دين الشهر ده — يستأهل متابعة</div>' +
             '<span class="alert-group-arrow">▼</span>' +
           '</summary>' +
           '<div class="alert-group-list">';
@@ -2017,15 +2035,74 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   let attFilterMode = 'today'; // بند 69: افتراضي "اليوم" بدل "الكل" — أسرع في العرض والرسم على الشاشة
   let attFilterDate = '';
 
+  // ==========================================================================
+  // الفصل الشهري: كل تاب بيعرض شهر واحد بس (الافتراضي الشهر الحالي) ويقدر يرجع لأي شهر قديم
+  // ==========================================================================
+  let __monthsInfo = null;
+  const selectedMonth = { attendance: null, requests: null, review: null };
+  const MONTH_SELECT_IDS = { attendance: 'attMonth', requests: 'reqMonth', review: 'reviewMonth' };
+  const AR_MONTHS_UI = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  function currentMonthCairoUI() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' }).substring(0, 7);
+  }
+  function monthLabelUI(ym) {
+    const p = String(ym).split('-');
+    return AR_MONTHS_UI[Number(p[1]) - 1] + ' ' + p[0];
+  }
+  function ensureMonths() {
+    if (__monthsInfo) return Promise.resolve(__monthsInfo);
+    return fetchWithRetry_('monthsList', {}).then(d => {
+      if (!d || d.error || !d.months) throw new Error('no months');
+      __monthsInfo = d; return d;
+    }).catch(() => {
+      const c = currentMonthCairoUI();
+      return { current: c, months: [{ month: c, label: monthLabelUI(c), current: true, closed: false }] };
+    });
+  }
+  function getSelMonth(key) {
+    return selectedMonth[key] || (__monthsInfo ? __monthsInfo.current : currentMonthCairoUI());
+  }
+  function isSelMonthClosed(key) {
+    const ym = getSelMonth(key);
+    const m = __monthsInfo && __monthsInfo.months.find(x => x.month === ym);
+    return !!(m && m.closed);
+  }
+  function fillMonthSelect(key) {
+    return ensureMonths().then(info => {
+      const sel = document.getElementById(MONTH_SELECT_IDS[key]);
+      if (!sel) return;
+      const cur = getSelMonth(key);
+      sel.innerHTML = info.months.map(m =>
+        '<option value="' + m.month + '"' + (m.month === cur ? ' selected' : '') + '>' +
+        (m.current ? '📅 ' : (m.closed ? '🔒 ' : '')) + m.label + (m.current ? ' — الشهر الحالي' : (m.closed ? ' — مقفول' : '')) +
+        '</option>').join('');
+    });
+  }
+  function onMonthChange(key, value) {
+    selectedMonth[key] = value;
+    if (key === 'attendance') {
+      // "اليوم" مالوش معنى في شهر قديم — نعرض الشهر كله
+      if (value !== (__monthsInfo ? __monthsInfo.current : currentMonthCairoUI()) && attFilterMode === 'today') attFilterMode = 'all';
+      const btnAll = document.getElementById('attFilterAll'), btnToday = document.getElementById('attFilterToday');
+      if (btnAll) btnAll.className = 'att-mode-btn' + (attFilterMode === 'all' ? ' act' : '');
+      if (btnToday) btnToday.className = 'att-mode-btn' + (attFilterMode === 'today' ? ' act' : '');
+      loadAttendanceLog();
+    } else if (key === 'requests') loadUnifiedRequests();
+    else if (key === 'review') loadReviewList();
+  }
+
   function loadAttendanceLog() {
     // بند 67: نعرض آخر سجل حضور معروف فورًا، ونحدّثه بهدوء في الخلفية
+    fillMonthSelect('attendance');
+    const month = getSelMonth('attendance');
     loadWithStaleCache_(
-      'attendanceLog',
-      () => apiCall('attendanceLog'),
-      (events) => { cachedAttLog = events || []; renderAttendanceLog(); }
+      'attendanceLog_' + month,
+      () => apiCall('attendanceLog', { month }),
+      (events) => { if (month !== getSelMonth('attendance')) return; cachedAttLog = events || []; renderAttendanceLog(); }
     ).catch(err => {
       let hasStaleData = false;
-      try { hasStaleData = !!localStorage.getItem('staleCache_attendanceLog'); } catch (e) {}
+      try { hasStaleData = !!localStorage.getItem('staleCache_attendanceLog_' + month); } catch (e) {}
       if (!hasStaleData) {
         document.getElementById('attLogList').innerHTML = '<div class="empty-v2"><div class="empty-icon">⚠️</div><div class="empty-txt">خطأ: ' + err.message + '</div></div>';
       }
@@ -2064,6 +2141,9 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
   }
 
   function renderAttendanceLog() {
+    const monthClosed = isSelMonthClosed('attendance');
+    const noteEl = document.getElementById('attMonthNote');
+    if (noteEl) noteEl.innerHTML = monthClosed ? '<div class="month-closed-note">🔒 شهر ' + monthLabelUI(getSelMonth('attendance')) + ' مقفول — السجلات للعرض بس ومينفعش تتعدّل</div>' : '';
     const todayStr = new Date().toLocaleDateString('en-CA');
     const query = (document.getElementById('attSearch').value || '').toLowerCase();
 
@@ -2180,7 +2260,9 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
               '<div class="debt-info-icon">⏱</div>' +
               '<span class="debt-txt">دين <b>' + formatHoursAsTime(debtEvent.debtHours) + '</b> — ' + statusEmoji + ' ' + statusLabel + '</span>' +
             '</div>';
-          if (debtEvent.debtCancelled) {
+          if (monthClosed) {
+            // شهر مقفول: سجلاته نهائية — من غير أزرار تعديل
+          } else if (debtEvent.debtCancelled) {
             html += '<button class="btn-mini-v2 reenable" onclick="reenableDeduction(\'' + recordId + '\')">🔄 إعادة تفعيل</button>';
           } else {
             html += '<button class="btn-mini-v2 cancel" onclick="cancelDeduction(\'' + recordId + '\')">✖ إلغاء الخصم</button>';
@@ -2214,13 +2296,15 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 
   function loadReviewList() {
     // بند 67: نعرض آخر قائمة مراجعة معروفة فورًا، ونحدّثها بهدوء في الخلفية
+    fillMonthSelect('review');
+    const month = getSelMonth('review');
     loadWithStaleCache_(
-      'reviewQueue',
-      () => apiCall('reviewQueue'),
-      renderReviewList
+      'reviewQueue_' + month,
+      () => apiCall('reviewQueue', { month }),
+      (items) => { if (month !== getSelMonth('review')) return; renderReviewList(items); }
     ).catch(err => {
       let hasStaleData = false;
-      try { hasStaleData = !!localStorage.getItem('staleCache_reviewQueue'); } catch (e) {}
+      try { hasStaleData = !!localStorage.getItem('staleCache_reviewQueue_' + month); } catch (e) {}
       if (!hasStaleData) {
         document.getElementById('reviewList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>';
       }
@@ -2591,13 +2675,15 @@ body { padding-bottom:calc(78px + var(--safe-bottom)); }
 
   function loadUnifiedRequests() {
     // بند 67: نعرض آخر قائمة طلبات معروفة فورًا، ونحدّثها بهدوء في الخلفية
+    fillMonthSelect('requests');
+    const month = getSelMonth('requests');
     loadWithStaleCache_(
-      'unifiedRequests',
-      () => apiCall('unifiedRequests'),
-      (reqs) => { cachedRequests = reqs || []; renderUnifiedRequests(); }
+      'unifiedRequests_' + month,
+      () => apiCall('unifiedRequests', { month }),
+      (reqs) => { if (month !== getSelMonth('requests')) return; cachedRequests = reqs || []; renderUnifiedRequests(); }
     ).catch(err => {
       let hasStaleData = false;
-      try { hasStaleData = !!localStorage.getItem('staleCache_unifiedRequests'); } catch (e) {}
+      try { hasStaleData = !!localStorage.getItem('staleCache_unifiedRequests_' + month); } catch (e) {}
       if (!hasStaleData) {
         document.getElementById('unifiedReqList').innerHTML = '<div class="empty">خطأ: ' + err.message + '</div>';
       }
